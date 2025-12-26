@@ -249,7 +249,8 @@ test/
 
 | Commit | Description |
 |--------|-------------|
-| (pending) | Sprint 2: Data Layer with Precision Blur |
+| `e09d95e` | docs: add session log and update gitignore |
+| `e56e3a3` | Sprint 2: Data Layer with Precision Blur |
 | `34cbe6f` | chore: add .DS_Store to gitignore |
 | `e84850d` | Sprint 1: Core & Domain Layer Foundation |
 | `dd2f271` | Setup: Clean Architecture structure with Riverpod and dependencies |
@@ -289,8 +290,18 @@ flutter build apk
 
 ---
 
+## 🛠️ Development Environment
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| Flutter | 3.x | Dart SDK included |
+| Gradle | 9.2.1 | Native installation (Antigravity addon removed) |
+| Java | 1.8.0_461 | Oracle Corporation |
+
+---
+
 ## 📂 Repository
 
 - **Remote**: github-nuyna:uteshpa/nuyna.git
 - **Branch**: main
-- **Status**: ✅ Ready for Sprint 2 commit
+- **Status**: ✅ Sprint 2 completed and pushed
