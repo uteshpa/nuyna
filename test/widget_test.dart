@@ -1,30 +1,48 @@
-// This is a basic Flutter widget test.
+// Widget test for nuyna app
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Tests the main application widget to ensure it renders correctly.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:nuyna/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('App renders correctly with title', (WidgetTester tester) async {
+    // Build the app wrapped in ProviderScope
+    await tester.pumpWidget(const ProviderScope(child: MyApp()));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that the app title is displayed in the AppBar
+    expect(find.text('nuyna'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // Verify that the welcome message is displayed
+    expect(find.text("nuyna - Creator's Privacy Toolkit"), findsOneWidget);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that the app uses Material 3 theme
+    final MaterialApp app = tester.widget(find.byType(MaterialApp));
+    expect(app.theme?.useMaterial3, isTrue);
+  });
+
+  testWidgets('MyHomePage renders correctly', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: MyHomePage(title: 'Test Title'),
+        ),
+      ),
+    );
+
+    // Verify the title is displayed
+    expect(find.text('Test Title'), findsOneWidget);
+
+    // Verify the body text is displayed
+    expect(find.text("nuyna - Creator's Privacy Toolkit"), findsOneWidget);
+
+    // Verify it has an AppBar
+    expect(find.byType(AppBar), findsOneWidget);
+
+    // Verify it has a Scaffold
+    expect(find.byType(Scaffold), findsOneWidget);
   });
 }

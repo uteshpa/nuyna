@@ -7,7 +7,8 @@ plugins {
 
 android {
     namespace = "com.uteshpa.nuyna.nuyna"
-    compileSdk = flutter.compileSdkVersion
+    // Updated for ML Kit and FFmpeg compatibility
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -22,10 +23,9 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.uteshpa.nuyna.nuyna"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // Updated for ML Kit (minSdk 24) and FFmpeg (minSdk 24)
+        minSdk = 24
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

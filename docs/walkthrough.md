@@ -22,6 +22,14 @@ lib/
 │   │   └── app_constants.dart
 │   └── errors/
 │       └── failures.dart
+├── data/                  # Data layer (Sprint 2)
+│   ├── datasources/
+│   │   ├── ml_kit_datasource.dart
+│   │   ├── ffmpeg_datasource.dart
+│   │   └── storage_datasource.dart
+│   └── repositories/
+│       ├── face_detection_repository_impl.dart
+│       └── video_repository_impl.dart
 ├── domain/                # Business logic layer
 │   ├── entities/
 │   │   ├── face_region.dart
@@ -47,6 +55,9 @@ lib/
 | get_it | ^7.6.0 | Dependency injection |
 | intl | ^0.19.0 | Internationalization |
 | path_provider | ^2.1.0 | File system access |
+| google_mlkit_face_detection | ^0.13.1 | Face detection & landmarks |
+| ffmpeg_kit_flutter_minimal | ^6.0.8 | Video processing |
+| dartz | ^0.10.1 | Functional programming |
 
 ---
 
@@ -96,9 +107,9 @@ class FaceDetectionResult {
 ```dart
 class ProcessedVideo {
   final String outputPath;
-  final int frameCount;
-  final int facesDetected;
-  final Duration totalProcessingTime;
+  final Duration processingTime;
+  final int totalFrames;
+  final int processedFrames;
 }
 ```
 
@@ -121,17 +132,16 @@ class VideoProcessingOptions {
 **[face_detection_repository.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/domain/repositories/face_detection_repository.dart)**
 ```dart
 abstract class FaceDetectionRepository {
-  Future<FaceDetectionResult> detectFaces(String imagePath);
-  Future<FaceDetectionResult> detectFacesInFrame(List<int> frameData);
+  Future<FaceDetectionResult> detectFaces(List<int> imageBytes);
 }
 ```
 
 **[video_repository.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/domain/repositories/video_repository.dart)**
 ```dart
 abstract class VideoRepository {
-  Future<ProcessedVideo> processVideo(String inputPath, VideoProcessingOptions options);
-  Future<List<int>> extractFrame(String videoPath, int frameIndex);
-  Future<void> applyBlurToRegions(String inputPath, String outputPath, List<FaceRegion> regions, double blurStrength);
+  Future<List<List<int>>> extractFrames(String videoPath);
+  Future<String> applyBlur({required String videoPath, required Map<int, List<FaceRegion>> faceRegions, required double blurStrength});
+  Future<ProcessedVideo> processVideo({required String videoPath, required Map<int, List<FaceRegion>> faceRegions, required double blurStrength});
 }
 ```
 
@@ -149,6 +159,47 @@ class ProcessVideoUseCase {
 
 ---
 
+### Sprint 2: Data Layer with Precision Blur
+
+#### Data Sources
+
+**[ml_kit_datasource.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/data/datasources/ml_kit_datasource.dart)**
+- Uses ML Kit with `enableLandmarks: true` for precision detection
+- `detectFacesFromImage(String imagePath)` - File-based detection
+- `detectFacesFromBytes(Uint8List imageBytes, int width, int height)` - Bytes-based detection
+- Extracts biometric landmarks: eyes, nose, mouth, ears, cheeks
+
+**[ffmpeg_datasource.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/data/datasources/ffmpeg_datasource.dart)**
+- `extractFrames(videoPath, outputDir)` - Extract frames at specified FPS
+- `applyPrecisionBlurFilter(...)` - Apply blur using landmark coordinates
+- `generateLandmarkBlurFilter(...)` - Generate FFmpeg complex filter string
+- `getVideoInfo(videoPath)` - Get duration and frame rate
+
+> [!IMPORTANT]
+> **Precision Blur Implementation**: Uses `boxblur` with `enable='hypot(X-x,Y-y)<radius'` to blur only small circular areas around each landmark point, not the entire face bounding box.
+
+**[storage_datasource.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/data/datasources/storage_datasource.dart)**
+- `getTemporaryDirectory()` / `getApplicationDocumentsDirectory()`
+- `saveFile(path, bytes)` / `readFile(path)`
+- `createDirectory(path)` / `deleteDirectory(path)`
+- `fileExists(path)` / `deleteFile(path)` / `listFiles(path)`
+
+#### Repository Implementations
+
+**[face_detection_repository_impl.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/data/repositories/face_detection_repository_impl.dart)**
+- Converts ML Kit `Face` objects to domain `FaceRegion` entities
+- Extracts landmarks: leftEye, rightEye, noseBase, mouth points, ears, cheeks
+- Handles temporary file creation/cleanup for image processing
+- Throws `FaceDetectionFailure` on errors
+
+**[video_repository_impl.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/data/repositories/video_repository_impl.dart)**
+- `extractFrames()` - Extract frames and read as bytes
+- `applyBlur()` - Validate inputs and apply precision blur filter
+- `processVideo()` - Full pipeline with timing and frame counting
+- Validates blur strength (10.0-25.0 range)
+
+---
+
 ## 🧪 Test Coverage
 
 ### Test Results Summary
@@ -159,8 +210,10 @@ class ProcessVideoUseCase {
 | Core Failures | 7 | ✅ Pass |
 | Domain Entities | 22 | ✅ Pass |
 | Domain Use Cases | 10 | ✅ Pass |
-| Widget Test | 1 | ⚠️ Needs update |
-| **Total** | **60** | **59 Pass / 1 Fail** |
+| Data Sources | 30 | ✅ Pass |
+| Data Repositories | 29 | ✅ Pass |
+| Widget Test | 2 | ✅ Pass |
+| **Total** | **104** | **104 Pass** |
 
 ### Test Files
 
@@ -171,6 +224,14 @@ test/
 │   │   └── app_constants_test.dart
 │   └── errors/
 │       └── failures_test.dart
+├── data/
+│   ├── datasources/
+│   │   ├── ffmpeg_datasource_test.dart
+│   │   ├── ml_kit_datasource_test.dart
+│   │   └── storage_datasource_test.dart
+│   └── repositories/
+│       ├── face_detection_repository_impl_test.dart
+│       └── video_repository_impl_test.dart
 ├── domain/
 │   ├── entities/
 │   │   ├── face_detection_result_test.dart
@@ -182,14 +243,13 @@ test/
 └── widget_test.dart
 ```
 
-> **Note**: `widget_test.dart` fails because it still tests the default Flutter counter app, not the current main.dart implementation. This should be updated in a future sprint.
-
 ---
 
 ## 📝 Git History
 
 | Commit | Description |
 |--------|-------------|
+| (pending) | Sprint 2: Data Layer with Precision Blur |
 | `34cbe6f` | chore: add .DS_Store to gitignore |
 | `e84850d` | Sprint 1: Core & Domain Layer Foundation |
 | `dd2f271` | Setup: Clean Architecture structure with Riverpod and dependencies |
@@ -199,12 +259,6 @@ test/
 ---
 
 ## 🎯 Next Steps
-
-### Sprint 2: Data Layer Implementation
-- [ ] Implement `FaceDetectionRepositoryImpl`
-- [ ] Implement `VideoRepositoryImpl`
-- [ ] Add FFmpeg integration
-- [ ] Add ML Kit face detection
 
 ### Sprint 3: Presentation Layer
 - [ ] Create ViewModels
@@ -239,4 +293,4 @@ flutter build apk
 
 - **Remote**: github-nuyna:uteshpa/nuyna.git
 - **Branch**: main
-- **Status**: ✅ Fully synced with origin
+- **Status**: ✅ Ready for Sprint 2 commit
