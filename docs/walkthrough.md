@@ -26,7 +26,8 @@ lib/
 │   ├── datasources/
 │   │   ├── ml_kit_datasource.dart
 │   │   ├── ffmpeg_datasource.dart
-│   │   └── storage_datasource.dart
+│   │   ├── storage_datasource.dart
+│   │   └── mediapipe_datasource.dart
 │   └── repositories/
 │       ├── face_detection_repository_impl.dart
 │       └── video_repository_impl.dart
@@ -41,6 +42,11 @@ lib/
 │   │   └── video_repository.dart
 │   └── usecases/
 │       └── process_video_usecase.dart
+├── presentation/          # UI layer (Sprint 3)
+│   ├── pages/
+│   │   └── home_page.dart
+│   └── viewmodels/
+│       └── home_viewmodel.dart
 └── main.dart
 ```
 
@@ -200,6 +206,36 @@ class ProcessVideoUseCase {
 
 ---
 
+### Sprint 3: Presentation Layer & Finger Guard
+
+**Commit**: `f0fea4f` - Sprint 3: Presentation Layer & Finger Guard
+
+#### Presentation Layer
+
+**[home_page.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/presentation/pages/home_page.dart)**
+- Main UI matching wireframe design
+- nuyna logo with leaf icon
+- Video selection area with dashed border
+- Three action buttons: METADATA, BIOMETRICS, FACE
+- Toggle states with visual feedback
+- DashedBorderPainter for custom border effect
+
+**[home_viewmodel.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/presentation/viewmodels/home_viewmodel.dart)**
+- Riverpod StateNotifier pattern
+- HomeState with video path, processing status, options
+- Methods: selectVideo, clearSelection, toggleMetadataStrip, toggleBiometrics, toggleFaceBlur, processVideo
+- Integrated with VideoProcessingOptions
+
+#### Finger Guard Data Source
+
+**[mediapipe_datasource.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/data/datasources/mediapipe_datasource.dart)**
+- Hand detection with 21 landmark points
+- HandDetectionResult, HandLandmark, HandType, HandLandmarkType
+- getFingertipLandmarks() - Extract 5 fingertip positions
+- convertToFaceRegions() - Unified biometric landmark format
+
+---
+
 ## 🧪 Test Coverage
 
 ### Test Results Summary
@@ -210,10 +246,11 @@ class ProcessVideoUseCase {
 | Core Failures | 7 | ✅ Pass |
 | Domain Entities | 22 | ✅ Pass |
 | Domain Use Cases | 10 | ✅ Pass |
-| Data Sources | 30 | ✅ Pass |
+| Data Sources | 47 | ✅ Pass |
 | Data Repositories | 29 | ✅ Pass |
-| Widget Test | 2 | ✅ Pass |
-| **Total** | **104** | **104 Pass** |
+| Presentation ViewModels | 11 | ✅ Pass |
+| Widget Tests | 12 | ✅ Pass |
+| **Total** | **136** | **136 Pass** |
 
 ### Test Files
 
@@ -228,7 +265,8 @@ test/
 │   ├── datasources/
 │   │   ├── ffmpeg_datasource_test.dart
 │   │   ├── ml_kit_datasource_test.dart
-│   │   └── storage_datasource_test.dart
+│   │   ├── storage_datasource_test.dart
+│   │   └── mediapipe_datasource_test.dart
 │   └── repositories/
 │       ├── face_detection_repository_impl_test.dart
 │       └── video_repository_impl_test.dart
@@ -240,6 +278,11 @@ test/
 │   │   └── video_processing_options_test.dart
 │   └── usecases/
 │       └── process_video_usecase_test.dart
+├── presentation/
+│   ├── pages/
+│   │   └── home_page_test.dart
+│   └── viewmodels/
+│       └── home_viewmodel_test.dart
 └── widget_test.dart
 ```
 
@@ -249,23 +292,23 @@ test/
 
 | Commit | Description |
 |--------|-------------|
+| `f0fea4f` | Sprint 3: Presentation Layer & Finger Guard |
+| `25115bf` | docs: add Sprint 2 verification results |
 | `e09d95e` | docs: add session log and update gitignore |
 | `e56e3a3` | Sprint 2: Data Layer with Precision Blur |
 | `34cbe6f` | chore: add .DS_Store to gitignore |
 | `e84850d` | Sprint 1: Core & Domain Layer Foundation |
 | `dd2f271` | Setup: Clean Architecture structure with Riverpod and dependencies |
-| `a879fde` | Initial Flutter project setup with iOS/Android support |
-| `8e7955e` | Initial commit |
 
 ---
 
 ## 🎯 Next Steps
 
-### Sprint 3: Presentation Layer
-- [ ] Create ViewModels
-- [ ] Build UI components
-- [ ] Implement video player
-- [ ] Add processing progress UI
+### Sprint 4: Integration & Polish
+- [ ] Connect UI to UseCases
+- [ ] Implement video picker
+- [ ] Add processing progress animation
+- [ ] Real device testing
 
 ---
 
