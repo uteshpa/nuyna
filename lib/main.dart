@@ -1,46 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nuyna/presentation/pages/home_page.dart';
 
 void main() {
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(const ProviderScope(child: NuynaApp()));
 }
 
-class MyApp extends ConsumerWidget {
-  const MyApp({super.key});
+class NuynaApp extends ConsumerWidget {
+  const NuynaApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'nuyna - Creator\'s Privacy Toolkit',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF2E7D32),
+          brightness: Brightness.light,
+        ),
         useMaterial3: true,
+        fontFamily: 'Roboto',
       ),
-      home: const MyHomePage(title: 'nuyna'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF2E7D32),
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+        fontFamily: 'Roboto',
       ),
-      body: const Center(
-        child: Text('nuyna - Creator\'s Privacy Toolkit'),
-      ),
+      themeMode: ThemeMode.system,
+      home: const HomePage(),
     );
   }
 }
