@@ -1,59 +1,36 @@
 # Session Log - 2025-12-29
 
 > **Project**: nuyna - Creator's Privacy Toolkit  
-> **Session Time**: 17:09 - 17:13 JST
+> **Session Time**: 17:09 - 17:37 JST
 
 ---
 
 ## 📋 Session Summary
 
-本日のセッションでは、Riverpod 3.1への移行に伴うHomeViewModelとテストファイルのマイグレーションを完了しました。
+本日のセッションでは以下を完了しました：
+1. Riverpod 3.1への移行（HomeViewModel、テスト）
+2. Sprint 4: Integration & Core Features の実装
 
 ---
 
-## 🔄 Riverpod 3.1 Migration
+## 🔄 Part 1: Riverpod 3.1 Migration (17:09 - 17:13)
 
-### 1. HomeViewModel マイグレーション
-
-**実行時刻**: 17:09
+### 1.1 HomeViewModel マイグレーション
 
 **変更ファイル**: `lib/presentation/viewmodels/home_viewmodel.dart`
-
-**変更内容**:
 
 | Before (Riverpod 2.x) | After (Riverpod 3.x) |
 |----------------------|----------------------|
 | `extends StateNotifier<HomeState>` | `extends Notifier<HomeState>` |
-| コンストラクタ: `HomeViewModel() : super(HomeState())` | `@override HomeState build() { return HomeState(); }` |
-| `StateNotifierProvider<HomeViewModel, HomeState>((ref) { ... })` | `NotifierProvider<HomeViewModel, HomeState>(HomeViewModel.new)` |
+| コンストラクタ | `@override HomeState build()` |
+| `StateNotifierProvider` | `NotifierProvider` |
 
-**理由**:
-- Riverpod 3.x では `StateNotifier` が非推奨
-- 新しい `Notifier` API は `build()` メソッドで初期状態を定義
-- より簡潔なプロバイダー構文
-
----
-
-### 2. HomeViewModelテスト マイグレーション
-
-**実行時刻**: 17:10
+### 1.2 テストパターン更新
 
 **変更ファイル**: `test/presentation/viewmodels/home_viewmodel_test.dart`
 
-**問題**: 直接インスタンス化でエラー発生
-```
-Bad state: Tried to use a notifier in an uninitialized state.
-```
-
-**解決策**: ProviderContainer パターンに移行
-
 ```dart
-// Before (Riverpod 2.x)
-setUp(() {
-  viewModel = HomeViewModel();
-});
-
-// After (Riverpod 3.x)
+// ProviderContainer パターンを採用
 setUp(() {
   container = ProviderContainer();
   viewModel = container.read(homeViewModelProvider.notifier);
@@ -64,36 +41,97 @@ tearDown(() {
 });
 ```
 
-**状態アクセスの変更**:
-```dart
-// Before
-expect(viewModel.state.selectedVideoPath, isNull);
-
-// After
-final state = container.read(homeViewModelProvider);
-expect(state.selectedVideoPath, isNull);
-```
+**コミット**: `f5e8186` - Migrate HomeViewModel to Riverpod 3.1 Notifier pattern
 
 ---
 
-### 3. 静的解析警告の修正
+## 🚀 Part 2: Sprint 4 - Integration & Core Features (17:24 - 17:37)
 
-**実行時刻**: 17:11
+### 2.1 Dependency Injection Setup
 
-**問題**: ドキュメントコメント内の `<` `>` がHTMLとして解釈される警告
+**新規作成**: `lib/core/di/service_locator.dart`
 
-```
-info • Angle brackets will be interpreted as HTML • unintended_html_in_doc_comment
-```
-
-**解決策**: バッククォートで囲む
 ```dart
-// Before
-/// - Changed: extends StateNotifier<HomeState> → extends Notifier<HomeState>
+final getIt = GetIt.instance;
 
-// After
-/// - Changed: extends `StateNotifier<HomeState>` → extends `Notifier<HomeState>`
+void setupLocator() {
+  // DataSources
+  getIt.registerLazySingleton<MlKitDataSource>(() => MlKitDataSource());
+  getIt.registerLazySingleton<FFmpegDataSource>(() => FFmpegDataSource());
+  getIt.registerLazySingleton<StorageDataSource>(() => StorageDataSource());
+  getIt.registerLazySingleton<MediaPipeDataSource>(() => MediaPipeDataSource());
+
+  // Repositories
+  getIt.registerLazySingleton<FaceDetectionRepository>(() => FaceDetectionRepositoryImpl(...));
+  getIt.registerLazySingleton<VideoRepository>(() => VideoRepositoryImpl(...));
+
+  // UseCases
+  getIt.registerLazySingleton<ProcessVideoUseCase>(() => ProcessVideoUseCase(...));
+}
 ```
+
+### 2.2 main.dart更新
+
+```dart
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  setupLocator();  // DI setup追加
+  runApp(const ProviderScope(child: NuynaApp()));
+}
+```
+
+### 2.3 HomeViewModel UseCase統合
+
+**変更ファイル**: `lib/presentation/viewmodels/home_viewmodel.dart`
+
+```dart
+class HomeViewModel extends Notifier<HomeState> {
+  late final ProcessVideoUseCase _processVideoUseCase;
+
+  @override
+  HomeState build() {
+    _processVideoUseCase = getIt<ProcessVideoUseCase>();
+    return HomeState();
+  }
+
+  Future<void> processVideo() async {
+    // ProcessVideoUseCaseを使用した実際の処理
+    final result = await _processVideoUseCase.execute(
+      videoPath: state.selectedVideoPath!,
+      options: state.options,
+    );
+    // ...
+  }
+}
+```
+
+### 2.4 Video Picker & UI機能
+
+**変更ファイル**: `lib/presentation/pages/home_page.dart`
+
+**追加機能**:
+- `image_picker` によるビデオ選択
+- プロセスボタン（選択後に表示）
+- リアルタイム進捗表示
+- 成功/エラー SnackBar通知
+
+```dart
+Future<void> _pickVideo() async {
+  final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
+  if (video != null) {
+    ref.read(homeViewModelProvider.notifier).selectVideo(video.path);
+  }
+}
+```
+
+### 2.5 依存関係追加
+
+**pubspec.yaml**:
+```yaml
+image_picker: ^1.1.2
+```
+
+**コミット**: `58ef52b` - feat: Sprint 4 - Integration & Core Features
 
 ---
 
@@ -113,8 +151,9 @@ flutter test
 | Domain Use Cases | 10 | ✅ Pass |
 | Data Sources | 47 | ✅ Pass |
 | Data Repositories | 29 | ✅ Pass |
-| Presentation ViewModels | 11 | ✅ Pass |
-| Widget Tests | 12 | ✅ Pass |
+| Presentation ViewModels | 8 | ✅ Pass |
+| Presentation Pages | 9 | ✅ Pass |
+| Widget Tests | 2 | ✅ Pass |
 | **Total** | **136** | **136/136 Pass** |
 
 ### 静的解析
@@ -129,27 +168,15 @@ flutter analyze
 
 ## 📝 Git Operations
 
-### コミット
-
-```bash
-git add -A
-git commit -m "Migrate HomeViewModel to Riverpod 3.1 Notifier pattern"
-git push origin main
-```
-
-**結果**:
-- コミット `f5e8186` を作成
-- 6ファイル変更、315行追加、36行削除
-- GitHubにプッシュ完了
-
-### Git履歴
+### コミット履歴
 
 ```
-f5e8186 (HEAD -> main, origin/main) Migrate HomeViewModel to Riverpod 3.1 Notifier pattern
+58ef52b (HEAD -> main, origin/main) feat: Sprint 4 - Integration & Core Features
+0345374 docs: add session log 2025-12-29 and update walkthrough with Riverpod 3.1 migration
+f5e8186 Migrate HomeViewModel to Riverpod 3.1 Notifier pattern
 2b7cfd2 chore: Add session log documentation and new gradle test archive
 6951da0 docs: update walkthrough and session log with Sprint 3
 f0fea4f Sprint 3: Presentation Layer & Finger Guard
-25115bf docs: add Sprint 2 verification results
 e56e3a3 Sprint 2: Data Layer with Precision Blur
 e84850d Sprint 1: Core & Domain Layer Foundation
 ```
@@ -162,9 +189,10 @@ e84850d Sprint 1: Core & Domain Layer Foundation
 
 | Sprint | 内容 | コミット | 状態 |
 |--------|------|---------|------|
-| Sprint 1 | Core & Domain Layer Foundation | `e84850d` | ✅ 完了 |
-| Sprint 2 | Data Layer with Precision Blur | `e56e3a3` | ✅ 完了 |
-| Sprint 3 | Presentation Layer & Finger Guard | `f0fea4f` | ✅ 完了 |
+| Sprint 1 | Core & Domain Layer | `e84850d` | ✅ 完了 |
+| Sprint 2 | Data Layer | `e56e3a3` | ✅ 完了 |
+| Sprint 3 | Presentation Layer | `f0fea4f` | ✅ 完了 |
+| Sprint 4 | Integration & Core Features | `58ef52b` | ✅ 完了 |
 
 ### 技術スタック
 
@@ -173,44 +201,48 @@ e84850d Sprint 1: Core & Domain Layer Foundation
 | Flutter | 3.35.7 |
 | Dart | 3.9.2 |
 | Riverpod | 3.1.0 |
-| flutter_riverpod | 3.1.0 |
-| Ruby | 3.3.0 |
-| CocoaPods | 1.16.2 |
-| Gradle | 9.2.1 |
+| get_it | 9.2.0 |
+| image_picker | 1.1.2 |
 
 ### アーキテクチャ
 
 ```
 lib/
-├── core/              # 共通ユーティリティ・定数
-├── data/              # データレイヤー (Sprint 2)
-│   ├── datasources/   # ML Kit, FFmpeg, Storage, MediaPipe
-│   └── repositories/  # リポジトリ実装
-├── domain/            # ドメインレイヤー (Sprint 1)
-│   ├── entities/      # エンティティ
-│   ├── repositories/  # リポジトリインターフェース
-│   └── usecases/      # ユースケース
-├── presentation/      # プレゼンテーションレイヤー (Sprint 3)
-│   ├── pages/         # 画面ウィジェット
-│   └── viewmodels/    # ViewModel (Notifier)
-└── main.dart          # エントリーポイント
+├── core/
+│   ├── constants/
+│   ├── di/
+│   │   └── service_locator.dart  [NEW]
+│   └── errors/
+├── data/
+│   ├── datasources/
+│   └── repositories/
+├── domain/
+│   ├── entities/
+│   ├── repositories/
+│   └── usecases/
+├── presentation/
+│   ├── pages/
+│   │   └── home_page.dart  [UPDATED]
+│   └── viewmodels/
+│       └── home_viewmodel.dart  [UPDATED]
+└── main.dart  [UPDATED]
 ```
 
 ---
 
 ## 📌 Notes
 
-- Riverpod 3.x では `StateNotifier` から `Notifier` への移行が推奨
-- テストでは `ProviderContainer` を使用して Notifier を初期化
-- `build()` メソッドで初期状態を返す新しいパターン
-- Clean Architecture準拠、MVVM パターン維持
+- 全レイヤーの統合完了: Presentation → Domain → Data
+- get_itによるDI実装でテスタビリティ向上
+- image_pickerでギャラリーからビデオ選択可能
+- SnackBarによるユーザーフィードバック実装
 
 ---
 
 ## 🎯 Next Steps
 
-- [ ] Sprint 4: Integration & Testing
-  - [ ] UseCase連携の実装
-  - [ ] Video picker実装
-  - [ ] 実機テスト
+- [ ] Sprint 5: Results & Export
+  - [ ] 処理結果のプレビュー
+  - [ ] ビデオエクスポート機能
+  - [ ] 実機テスト（iOS/Android）
   - [ ] パフォーマンス最適化

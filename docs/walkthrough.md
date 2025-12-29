@@ -20,6 +20,8 @@ lib/
 ├── core/                  # Shared utilities and constants
 │   ├── constants/
 │   │   └── app_constants.dart
+│   ├── di/
+│   │   └── service_locator.dart   [Sprint 4]
 │   └── errors/
 │       └── failures.dart
 ├── data/                  # Data layer (Sprint 2)
@@ -42,7 +44,7 @@ lib/
 │   │   └── video_repository.dart
 │   └── usecases/
 │       └── process_video_usecase.dart
-├── presentation/          # UI layer (Sprint 3)
+├── presentation/          # UI layer (Sprint 3-4)
 │   ├── pages/
 │   │   └── home_page.dart
 │   └── viewmodels/
@@ -58,8 +60,9 @@ lib/
 |---------|---------|---------|
 | flutter_riverpod | ^3.1.0 | State management (Notifier API) |
 | riverpod | ^3.1.0 | Core Riverpod |
-| get_it | ^7.6.0 | Dependency injection |
-| intl | ^0.19.0 | Internationalization |
+| get_it | ^9.2.0 | Dependency injection |
+| image_picker | ^1.1.2 | Video selection from gallery |
+| intl | ^0.20.2 | Internationalization |
 | path_provider | ^2.1.0 | File system access |
 | google_mlkit_face_detection | ^0.13.1 | Face detection & landmarks |
 | ffmpeg_kit_flutter_minimal | ^6.0.8 | Video processing |
@@ -236,6 +239,36 @@ class ProcessVideoUseCase {
 
 ---
 
+### Sprint 4: Integration & Core Features
+
+**Commit**: `58ef52b` - feat: Sprint 4 - Integration & Core Features
+
+#### Dependency Injection
+
+**[service_locator.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/core/di/service_locator.dart)**
+- get_it based service locator
+- Registers: DataSources, Repositories, UseCases
+- `setupLocator()` called in main() before runApp()
+- `resetLocator()` for test cleanup
+
+#### ViewModel Integration
+
+**[home_viewmodel.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/presentation/viewmodels/home_viewmodel.dart)**
+- ProcessVideoUseCase injected via get_it
+- Real video processing pipeline connected
+- Error handling with state updates
+
+#### UI Features
+
+**[home_page.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/presentation/pages/home_page.dart)**
+- Video picker via image_picker package
+- Process button (visible when video selected)
+- Real-time progress display
+- Success/Error SnackBar notifications
+- ConsumerStatefulWidget for lifecycle management
+
+---
+
 ## 🧪 Test Coverage
 
 ### Test Results Summary
@@ -292,24 +325,21 @@ test/
 
 | Commit | Description |
 |--------|-------------|
+| `58ef52b` | feat: Sprint 4 - Integration & Core Features |
 | `f5e8186` | Migrate HomeViewModel to Riverpod 3.1 Notifier pattern |
 | `f0fea4f` | Sprint 3: Presentation Layer & Finger Guard |
-| `25115bf` | docs: add Sprint 2 verification results |
-| `e09d95e` | docs: add session log and update gitignore |
 | `e56e3a3` | Sprint 2: Data Layer with Precision Blur |
-| `34cbe6f` | chore: add .DS_Store to gitignore |
 | `e84850d` | Sprint 1: Core & Domain Layer Foundation |
-| `dd2f271` | Setup: Clean Architecture structure with Riverpod and dependencies |
 
 ---
 
 ## 🎯 Next Steps
 
-### Sprint 4: Integration & Polish
-- [ ] Connect UI to UseCases
-- [ ] Implement video picker
-- [ ] Add processing progress animation
-- [ ] Real device testing
+### Sprint 5: Results & Export
+- [ ] Processing result preview
+- [ ] Video export functionality
+- [ ] Real device testing (iOS/Android)
+- [ ] Performance optimization
 
 ---
 
