@@ -1,8 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nuyna/core/di/service_locator.dart';
 import 'package:nuyna/main.dart';
 
 void main() {
+  setUpAll(() {
+    setupLocator();
+  });
+
+  tearDownAll(() async {
+    await resetLocator();
+  });
+
   testWidgets('NuynaApp smoke test', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: NuynaApp()));
 

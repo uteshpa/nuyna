@@ -16,6 +16,7 @@ dependencies:
   get_it: ^9.2.0
   intl: ^0.20.2
   path_provider: ^2.1.0
+  image_picker: ^1.1.2
   # Sprint 2: Data Layer dependencies
   google_mlkit_face_detection: ^0.13.1
   ffmpeg_kit_flutter_minimal: ^6.0.8

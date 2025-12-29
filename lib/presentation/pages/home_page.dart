@@ -1,13 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:nuyna/presentation/viewmodels/home_viewmodel.dart';
 
 /// Home page widget - Main screen of nuyna app
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen for error messages and show SnackBar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.listenManual(
+        homeViewModelProvider.select((s) => s.errorMessage),
+        (prev, next) {
+          if (next != null && next.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(next),
+                backgroundColor: Colors.red.shade700,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      );
+
+      // Listen for processing completion
+      ref.listenManual(
+        homeViewModelProvider.select((s) => s.processedVideo),
+        (prev, next) {
+          if (next != null && prev == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Video processed successfully!'),
+                backgroundColor: Colors.green.shade700,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+      );
+    });
+  }
+
+  Future<void> _pickVideo() async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    try {
+      final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
+      if (video != null) {
+        ref.read(homeViewModelProvider.notifier).selectVideo(video.path);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to pick video: $e'),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final homeState = ref.watch(homeViewModelProvider);
     final viewModel = ref.read(homeViewModelProvider.notifier);
 
@@ -23,6 +87,10 @@ class HomePage extends ConsumerWidget {
             const Spacer(),
             // Video Selection Area
             _buildVideoSelectionArea(context, homeState, viewModel),
+            const SizedBox(height: 24),
+            // Process Button
+            if (homeState.selectedVideoPath != null)
+              _buildProcessButton(homeState, viewModel),
             const Spacer(),
             // Action Buttons
             _buildActionButtons(homeState, viewModel),
@@ -66,11 +134,7 @@ class HomePage extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: GestureDetector(
-        onTap: () {
-          // TODO: Implement video picker
-          // For now, simulate selection
-          viewModel.selectVideo('/example/video.mp4');
-        },
+        onTap: state.isProcessing ? null : _pickVideo,
         child: Container(
           width: double.infinity,
           height: 180,
@@ -129,26 +193,95 @@ class HomePage extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(
-          Icons.video_file,
+          state.processedVideo != null ? Icons.check_circle : Icons.video_file,
           size: 48,
-          color: Colors.green.shade600,
+          color: state.processedVideo != null 
+              ? Colors.green.shade600 
+              : Colors.blue.shade600,
         ),
         const SizedBox(height: 8),
         Text(
-          'Video Selected',
+          state.processedVideo != null 
+              ? 'Processing Complete!'
+              : _getFileName(state.selectedVideoPath!),
           style: TextStyle(
             fontSize: 14,
             color: Colors.grey.shade700,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         if (state.isProcessing)
           Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: LinearProgressIndicator(
-              value: state.processingProgress,
+            padding: const EdgeInsets.only(top: 12, left: 24, right: 24),
+            child: Column(
+              children: [
+                LinearProgressIndicator(
+                  value: state.processingProgress,
+                  backgroundColor: Colors.grey.shade300,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${(state.processingProgress * 100).toInt()}%',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
             ),
           ),
       ],
+    );
+  }
+
+  String _getFileName(String path) {
+    return path.split('/').last;
+  }
+
+  /// Build process button
+  Widget _buildProcessButton(HomeState state, HomeViewModel viewModel) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: SizedBox(
+        width: double.infinity,
+        height: 50,
+        child: ElevatedButton(
+          onPressed: state.isProcessing ? null : viewModel.processVideo,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green.shade700,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            disabledBackgroundColor: Colors.grey.shade400,
+          ),
+          child: state.isProcessing
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text('Processing...'),
+                  ],
+                )
+              : Text(
+                  state.processedVideo != null ? 'Process Again' : 'Process Video',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+        ),
+      ),
     );
   }
 

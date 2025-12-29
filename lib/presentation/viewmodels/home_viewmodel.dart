@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nuyna/core/di/service_locator.dart';
 import 'package:nuyna/domain/entities/video_processing_options.dart';
 import 'package:nuyna/domain/entities/processed_video.dart';
+import 'package:nuyna/domain/usecases/process_video_usecase.dart';
 
 /// State class for the Home screen
 class HomeState {
@@ -45,20 +47,13 @@ class HomeState {
 
 /// ViewModel (Notifier) for the Home screen
 /// 
-/// Migration from StateNotifier to Notifier (Riverpod 3.x):
-/// - Changed: extends `StateNotifier<HomeState>` → extends `Notifier<HomeState>`
-/// - Changed: Constructor removed, replaced with build() method
-/// - Unchanged: state getter/setter usage remains the same
+/// Integrates with ProcessVideoUseCase for real video processing.
 class HomeViewModel extends Notifier<HomeState> {
-  // Future: Inject UseCases via constructor
-  // final ProcessVideoUseCase _processVideoUseCase;
+  late final ProcessVideoUseCase _processVideoUseCase;
 
-  /// Initialize the state
-  /// 
-  /// This replaces the constructor in StateNotifier.
-  /// The build() method is called once when the provider is first accessed.
   @override
   HomeState build() {
+    _processVideoUseCase = getIt<ProcessVideoUseCase>();
     return HomeState();
   }
 
@@ -67,6 +62,7 @@ class HomeViewModel extends Notifier<HomeState> {
     state = state.copyWith(
       selectedVideoPath: videoPath,
       errorMessage: null,
+      processedVideo: null,
     );
   }
 
@@ -105,7 +101,7 @@ class HomeViewModel extends Notifier<HomeState> {
     );
   }
 
-  /// Start video processing
+  /// Start video processing using ProcessVideoUseCase
   Future<void> processVideo() async {
     if (state.selectedVideoPath == null) {
       state = state.copyWith(errorMessage: 'Please select a video first');
@@ -119,22 +115,18 @@ class HomeViewModel extends Notifier<HomeState> {
     );
 
     try {
-      // TODO: Implement actual processing with UseCase
-      // Simulate processing for now
-      for (var i = 0; i <= 100; i += 10) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        state = state.copyWith(processingProgress: i / 100);
-      }
+      // Update progress to 10% - starting
+      state = state.copyWith(processingProgress: 0.1);
+
+      final result = await _processVideoUseCase.execute(
+        videoPath: state.selectedVideoPath!,
+        options: state.options,
+      );
 
       state = state.copyWith(
         isProcessing: false,
         processingProgress: 1.0,
-        processedVideo: ProcessedVideo(
-          outputPath: '${state.selectedVideoPath}_processed.mp4',
-          processingTime: const Duration(seconds: 1),
-          totalFrames: 100,
-          processedFrames: 100,
-        ),
+        processedVideo: result,
       );
     } catch (e) {
       state = state.copyWith(
@@ -146,9 +138,5 @@ class HomeViewModel extends Notifier<HomeState> {
 }
 
 /// Provider for HomeViewModel
-/// 
-/// Migration from StateNotifierProvider to NotifierProvider (Riverpod 3.x):
-/// - Changed: `StateNotifierProvider<HomeViewModel, HomeState>` → `NotifierProvider<HomeViewModel, HomeState>`
-/// - Changed: Provider constructor syntax simplified
 final homeViewModelProvider =
     NotifierProvider<HomeViewModel, HomeState>(HomeViewModel.new);
