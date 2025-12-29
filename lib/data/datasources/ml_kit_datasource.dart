@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -10,12 +11,12 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 class MlKitDataSource {
   /// Face detector instance with accurate mode and landmarks enabled.
   final FaceDetector _faceDetector = FaceDetector(
-    options: FaceDetectorOptions(
-      performanceMode: FaceDetectorMode.accurate,
-      enableLandmarks: true,
-      enableContours: true,
-    ),
-  );
+        options: FaceDetectorOptions(
+          performanceMode: FaceDetectorMode.accurate,
+          enableLandmarks: true,
+          enableContours: true,
+        ),
+      );
 
   /// Detects faces from an image file path.
   ///

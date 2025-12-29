@@ -1,3 +1,4 @@
+# iOS deployment target for ML Kit Face Detection
 platform :ios, '15.5'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
