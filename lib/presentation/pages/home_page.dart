@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:nuyna/presentation/pages/result_page.dart';
 import 'package:nuyna/presentation/viewmodels/home_viewmodel.dart';
 
 /// Home page widget - Main screen of nuyna app
@@ -34,16 +35,14 @@ class _HomePageState extends ConsumerState<HomePage> {
         },
       );
 
-      // Listen for processing completion
+      // Listen for processing completion and navigate to ResultPage
       ref.listenManual(
         homeViewModelProvider.select((s) => s.processedVideo),
         (prev, next) {
           if (next != null && prev == null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Video processed successfully!'),
-                backgroundColor: Colors.green.shade700,
-                behavior: SnackBarBehavior.floating,
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => ResultPage(processedVideo: next),
               ),
             );
           }
