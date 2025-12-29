@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.uteshpa.nuyna.nuyna"
     // Updated for ML Kit and FFmpeg compatibility
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -25,7 +25,7 @@ android {
         applicationId = "com.uteshpa.nuyna.nuyna"
         // Updated for ML Kit (minSdk 24) and FFmpeg (minSdk 24)
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
