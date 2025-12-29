@@ -1,7 +1,7 @@
 # nuyna Project Walkthrough
 
 > **Creator's Privacy Toolkit** - Complete offline video privacy protection app  
-> **Updated**: 2025-12-26
+> **Updated**: 2025-12-29
 
 ---
 
@@ -56,8 +56,8 @@ lib/
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| flutter_riverpod | ^2.4.0 | State management |
-| riverpod | ^2.4.0 | Core Riverpod |
+| flutter_riverpod | ^3.1.0 | State management (Notifier API) |
+| riverpod | ^3.1.0 | Core Riverpod |
 | get_it | ^7.6.0 | Dependency injection |
 | intl | ^0.19.0 | Internationalization |
 | path_provider | ^2.1.0 | File system access |
@@ -292,6 +292,7 @@ test/
 
 | Commit | Description |
 |--------|-------------|
+| `f5e8186` | Migrate HomeViewModel to Riverpod 3.1 Notifier pattern |
 | `f0fea4f` | Sprint 3: Presentation Layer & Finger Guard |
 | `25115bf` | docs: add Sprint 2 verification results |
 | `e09d95e` | docs: add session log and update gitignore |
