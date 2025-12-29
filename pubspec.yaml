@@ -11,10 +11,10 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  riverpod: ^2.4.0
-  flutter_riverpod: ^2.4.0
-  get_it: ^7.6.0
-  intl: ^0.19.0
+  riverpod: ^3.1.0
+  flutter_riverpod: ^3.1.0
+  get_it: ^9.2.0
+  intl: ^0.20.2
   path_provider: ^2.1.0
   # Sprint 2: Data Layer dependencies
   google_mlkit_face_detection: ^0.13.1
@@ -24,8 +24,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
-  riverpod_generator: ^2.3.0
+  flutter_lints: ^6.0.0
+  riverpod_generator: ^4.0.0+1
   build_runner: ^2.4.0
 
 flutter:

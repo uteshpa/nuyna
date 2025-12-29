@@ -43,12 +43,24 @@ class HomeState {
   }
 }
 
-/// ViewModel (StateNotifier) for the Home screen
-class HomeViewModel extends StateNotifier<HomeState> {
+/// ViewModel (Notifier) for the Home screen
+/// 
+/// Migration from StateNotifier to Notifier (Riverpod 3.x):
+/// - Changed: extends `StateNotifier<HomeState>` → extends `Notifier<HomeState>`
+/// - Changed: Constructor removed, replaced with build() method
+/// - Unchanged: state getter/setter usage remains the same
+class HomeViewModel extends Notifier<HomeState> {
   // Future: Inject UseCases via constructor
   // final ProcessVideoUseCase _processVideoUseCase;
 
-  HomeViewModel() : super(HomeState());
+  /// Initialize the state
+  /// 
+  /// This replaces the constructor in StateNotifier.
+  /// The build() method is called once when the provider is first accessed.
+  @override
+  HomeState build() {
+    return HomeState();
+  }
 
   /// Select a video file
   void selectVideo(String videoPath) {
@@ -134,7 +146,9 @@ class HomeViewModel extends StateNotifier<HomeState> {
 }
 
 /// Provider for HomeViewModel
+/// 
+/// Migration from StateNotifierProvider to NotifierProvider (Riverpod 3.x):
+/// - Changed: `StateNotifierProvider<HomeViewModel, HomeState>` → `NotifierProvider<HomeViewModel, HomeState>`
+/// - Changed: Provider constructor syntax simplified
 final homeViewModelProvider =
-    StateNotifierProvider<HomeViewModel, HomeState>((ref) {
-  return HomeViewModel();
-});
+    NotifierProvider<HomeViewModel, HomeState>(HomeViewModel.new);

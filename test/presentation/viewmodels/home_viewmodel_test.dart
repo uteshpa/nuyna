@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nuyna/presentation/viewmodels/home_viewmodel.dart';
 
@@ -38,79 +39,101 @@ void main() {
   });
 
   group('HomeViewModel', () {
+    late ProviderContainer container;
     late HomeViewModel viewModel;
 
     setUp(() {
-      viewModel = HomeViewModel();
+      container = ProviderContainer();
+      viewModel = container.read(homeViewModelProvider.notifier);
+    });
+
+    tearDown(() {
+      container.dispose();
     });
 
     test('initial state should have default values', () {
-      expect(viewModel.state.selectedVideoPath, isNull);
-      expect(viewModel.state.isProcessing, false);
+      final state = container.read(homeViewModelProvider);
+      expect(state.selectedVideoPath, isNull);
+      expect(state.isProcessing, false);
     });
 
     test('selectVideo should update selectedVideoPath', () {
       viewModel.selectVideo('/path/to/video.mp4');
 
-      expect(viewModel.state.selectedVideoPath, '/path/to/video.mp4');
-      expect(viewModel.state.errorMessage, isNull);
+      final state = container.read(homeViewModelProvider);
+      expect(state.selectedVideoPath, '/path/to/video.mp4');
+      expect(state.errorMessage, isNull);
     });
 
     test('clearSelection should reset state to defaults', () {
       viewModel.selectVideo('/path/to/video.mp4');
       viewModel.clearSelection();
 
-      expect(viewModel.state.selectedVideoPath, isNull);
-      expect(viewModel.state.isProcessing, false);
+      final state = container.read(homeViewModelProvider);
+      expect(state.selectedVideoPath, isNull);
+      expect(state.isProcessing, false);
     });
 
     test('toggleMetadataStrip should toggle enableMetadataStrip option', () {
-      final initialValue = viewModel.state.options.enableMetadataStrip;
-      viewModel.toggleMetadataStrip();
-
-      expect(viewModel.state.options.enableMetadataStrip, !initialValue);
+      final initialState = container.read(homeViewModelProvider);
+      final initialValue = initialState.options.enableMetadataStrip;
 
       viewModel.toggleMetadataStrip();
-      expect(viewModel.state.options.enableMetadataStrip, initialValue);
+
+      final state1 = container.read(homeViewModelProvider);
+      expect(state1.options.enableMetadataStrip, !initialValue);
+
+      viewModel.toggleMetadataStrip();
+
+      final state2 = container.read(homeViewModelProvider);
+      expect(state2.options.enableMetadataStrip, initialValue);
     });
 
     test('toggleBiometrics should toggle iris and finger guard options', () {
-      expect(viewModel.state.options.enableIrisBlock, false);
-      expect(viewModel.state.options.enableFingerGuard, false);
+      final initialState = container.read(homeViewModelProvider);
+      expect(initialState.options.enableIrisBlock, false);
+      expect(initialState.options.enableFingerGuard, false);
 
       viewModel.toggleBiometrics();
 
-      expect(viewModel.state.options.enableIrisBlock, true);
-      expect(viewModel.state.options.enableFingerGuard, true);
+      final state1 = container.read(homeViewModelProvider);
+      expect(state1.options.enableIrisBlock, true);
+      expect(state1.options.enableFingerGuard, true);
 
       viewModel.toggleBiometrics();
 
-      expect(viewModel.state.options.enableIrisBlock, false);
-      expect(viewModel.state.options.enableFingerGuard, false);
+      final state2 = container.read(homeViewModelProvider);
+      expect(state2.options.enableIrisBlock, false);
+      expect(state2.options.enableFingerGuard, false);
     });
 
     test('toggleFaceBlur should toggle enableFaceBlur option', () {
-      final initialValue = viewModel.state.options.enableFaceBlur;
+      final initialState = container.read(homeViewModelProvider);
+      final initialValue = initialState.options.enableFaceBlur;
+
       viewModel.toggleFaceBlur();
 
-      expect(viewModel.state.options.enableFaceBlur, !initialValue);
+      final state = container.read(homeViewModelProvider);
+      expect(state.options.enableFaceBlur, !initialValue);
     });
 
     test('processVideo should set error when no video selected', () async {
       await viewModel.processVideo();
 
-      expect(viewModel.state.errorMessage, 'Please select a video first');
-      expect(viewModel.state.isProcessing, false);
+      final state = container.read(homeViewModelProvider);
+      expect(state.errorMessage, 'Please select a video first');
+      expect(state.isProcessing, false);
     });
 
     test('processVideo should process selected video', () async {
       viewModel.selectVideo('/path/to/video.mp4');
       await viewModel.processVideo();
 
-      expect(viewModel.state.isProcessing, false);
-      expect(viewModel.state.processingProgress, 1.0);
-      expect(viewModel.state.processedVideo, isNotNull);
-      expect(viewModel.state.errorMessage, isNull);
+      final state = container.read(homeViewModelProvider);
+      expect(state.isProcessing, false);
+      expect(state.processingProgress, 1.0);
+      expect(state.processedVideo, isNotNull);
+      expect(state.errorMessage, isNull);
     });
   });
 }
