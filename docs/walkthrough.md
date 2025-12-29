@@ -269,6 +269,35 @@ class ProcessVideoUseCase {
 
 ---
 
+### Sprint 5: Results & Export
+
+**Commit**: `70828a3` - feat: Sprint 5 - Results & Export
+
+#### ResultPage
+
+**[result_page.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/presentation/pages/result_page.dart)**
+- Video player with play/pause controls
+- Processing stats display (time, frames)
+- Save to Gallery button (gallery_saver_plus)
+- Share button (share_plus)
+- Navigation back to Home
+
+#### Dependencies Added
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| video_player | ^2.9.1 | Video playback |
+| gallery_saver_plus | ^3.0.5 | Save to device gallery |
+| share_plus | ^9.0.0 | Native share sheet |
+
+#### Navigation Flow
+
+- Processing success triggers navigation to ResultPage
+- ProcessedVideo passed to ResultPage
+- Back button returns to Home
+
+---
+
 ## 🧪 Test Coverage
 
 ### Test Results Summary
@@ -325,6 +354,7 @@ test/
 
 | Commit | Description |
 |--------|-------------|
+| `70828a3` | feat: Sprint 5 - Results & Export |
 | `58ef52b` | feat: Sprint 4 - Integration & Core Features |
 | `f5e8186` | Migrate HomeViewModel to Riverpod 3.1 Notifier pattern |
 | `f0fea4f` | Sprint 3: Presentation Layer & Finger Guard |
@@ -335,11 +365,11 @@ test/
 
 ## 🎯 Next Steps
 
-### Sprint 5: Results & Export
-- [ ] Processing result preview
-- [ ] Video export functionality
+### Sprint 6: Polish & Optimization
 - [ ] Real device testing (iOS/Android)
 - [ ] Performance optimization
+- [ ] UI/UX improvements
+- [ ] Error handling enhancement
 
 ---
 
