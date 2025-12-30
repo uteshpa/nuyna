@@ -45,5 +45,17 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Photo Library Access - Required for video selection -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>nuyna needs access to your photo library to select videos for privacy processing.</string>
+	<!-- Photo Library Add - Required for saving processed videos -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>nuyna needs permission to save processed videos to your photo library.</string>
+	<!-- Camera Access - For future video recording -->
+	<key>NSCameraUsageDescription</key>
+	<string>nuyna needs camera access to record videos for privacy processing.</string>
+	<!-- Microphone Access - For video recording with audio -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>nuyna needs microphone access to record audio with videos.</string>
 </dict>
 </plist>
