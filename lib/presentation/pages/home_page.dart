@@ -51,18 +51,21 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
   }
 
-  Future<void> _pickVideo() async {
+  Future<void> _pickMedia() async {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
     try {
-      final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
-      if (video != null) {
-        ref.read(homeViewModelProvider.notifier).selectVideo(video.path);
+      // Use pickMedia to select either image or video from gallery
+      final XFile? file = await _picker.pickMedia();
+      
+      if (file != null) {
+        ref.read(homeViewModelProvider.notifier).selectVideo(file.path);
       }
     } catch (e) {
       if (!mounted) return;
       scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text('Failed to pick video: $e'),
+          content: Text('Failed to pick media: $e'),
           backgroundColor: Colors.red.shade700,
         ),
       );
@@ -133,7 +136,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: GestureDetector(
-        onTap: state.isProcessing ? null : _pickVideo,
+        onTap: state.isProcessing ? null : _pickMedia,
         child: Container(
           width: double.infinity,
           height: 180,
@@ -175,7 +178,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Select Video',
+          'Select Media',
           style: TextStyle(
             fontSize: 16,
             color: Colors.grey.shade700,

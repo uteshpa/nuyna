@@ -17,7 +17,7 @@ void main() {
 
     // Verify app starts with the home page
     expect(find.text('nuyna'), findsOneWidget);
-    expect(find.text('Select Video'), findsOneWidget);
+    expect(find.text('Select Media'), findsOneWidget);
   });
 
   testWidgets('NuynaApp should display action buttons', (tester) async {
