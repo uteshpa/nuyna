@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -178,7 +179,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Select Media',
+          'Select Image',
           style: TextStyle(
             fontSize: 16,
             color: Colors.grey.shade700,
@@ -189,57 +190,71 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  /// Build selected video preview
+  /// Build selected media preview with thumbnail
   Widget _buildSelectedVideoPreview(HomeState state) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          state.processedVideo != null ? Icons.check_circle : Icons.video_file,
-          size: 48,
-          color: state.processedVideo != null 
-              ? Colors.green.shade600 
-              : Colors.blue.shade600,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          state.processedVideo != null 
-              ? 'Processing Complete!'
-              : _getFileName(state.selectedVideoPath!),
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade700,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        if (state.isProcessing)
-          Padding(
-            padding: const EdgeInsets.only(top: 12, left: 24, right: 24),
-            child: Column(
-              children: [
-                LinearProgressIndicator(
-                  value: state.processingProgress,
-                  backgroundColor: Colors.grey.shade300,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade600),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${(state.processingProgress * 100).toInt()}%',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
+    final path = state.selectedVideoPath!;
+    final isImage = _isImageFile(path);
+    
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: isImage
+                  ? Image.file(
+                      File(path),
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.broken_image,
+                        size: 48,
+                        color: Colors.grey.shade600,
+                      ),
+                    )
+                  : Container(
+                      color: Colors.black12,
+                      child: Center(
+                        child: Icon(
+                          Icons.videocam,
+                          size: 48,
+                          color: Colors.blue.shade600,
+                        ),
+                      ),
+                    ),
             ),
           ),
-      ],
+          const SizedBox(height: 8),
+          if (state.isProcessing)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  LinearProgressIndicator(
+                    value: state.processingProgress,
+                    backgroundColor: Colors.grey.shade300,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${(state.processingProgress * 100).toInt()}%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 
-  String _getFileName(String path) {
-    return path.split('/').last;
+  bool _isImageFile(String path) {
+    final ext = path.toLowerCase().split('.').last;
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].contains(ext);
   }
 
   /// Build process button
@@ -276,7 +291,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ],
                 )
               : Text(
-                  state.processedVideo != null ? 'Process Again' : 'Process Video',
+                  state.processedVideo != null ? 'Process Again' : 'Process Image',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

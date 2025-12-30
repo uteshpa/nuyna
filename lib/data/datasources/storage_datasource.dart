@@ -97,4 +97,28 @@ class StorageDataSource {
     final files = await dir.list().toList();
     return files.whereType<File>().map((f) => f.path).toList();
   }
+
+  /// Clears all nuyna temporary files from cache.
+  ///
+  /// This should be called on app exit to free memory and storage.
+  Future<void> clearTemporaryCache() async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final nuynaDir = Directory('${tempDir.path}/nuyna');
+      
+      if (await nuynaDir.exists()) {
+        await nuynaDir.delete(recursive: true);
+      }
+      
+      // Also clear any loose temp files that match nuyna patterns
+      final tempFiles = await tempDir.list().toList();
+      for (final entity in tempFiles) {
+        if (entity is File && entity.path.contains('nuyna')) {
+          await entity.delete();
+        }
+      }
+    } catch (_) {
+      // Silently ignore cleanup errors - best effort cleanup
+    }
+  }
 }

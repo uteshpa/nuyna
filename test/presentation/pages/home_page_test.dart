@@ -28,7 +28,7 @@ void main() {
       expect(find.byIcon(Icons.eco_outlined), findsOneWidget);
     });
 
-    testWidgets('should display Select Media text', (tester) async {
+    testWidgets('should display Select Image text', (tester) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -37,7 +37,7 @@ void main() {
         ),
       );
 
-      expect(find.text('Select Media'), findsOneWidget);
+      expect(find.text('Select Image'), findsOneWidget);
     });
 
     testWidgets('should display three action buttons', (tester) async {
@@ -129,7 +129,7 @@ void main() {
       await tester.pump();
 
       // Should show process button
-      expect(find.text('Process Video'), findsOneWidget);
+      expect(find.text('Process Image'), findsOneWidget);
       
       container.dispose();
     });
