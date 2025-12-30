@@ -45,7 +45,12 @@ class _HomePageState extends ConsumerState<HomePage> {
               MaterialPageRoute(
                 builder: (context) => ResultPage(processedVideo: next),
               ),
-            );
+            ).then((_) {
+              // Reset state when returning from result page
+              if (mounted) {
+                ref.read(homeViewModelProvider.notifier).clearSelection();
+              }
+            });
           }
         },
       );
@@ -291,7 +296,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ],
                 )
               : Text(
-                  state.processedVideo != null ? 'Process Again' : 'Process Image',
+                  'Process Image',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
