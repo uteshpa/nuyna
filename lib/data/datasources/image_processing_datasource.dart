@@ -1,13 +1,11 @@
 import 'dart:io';
-import 'dart:typed_data';
-import 'package:image/image.dart' as img;
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 /// Data source for processing static images with EXIF metadata removal.
 ///
 /// This class handles image processing operations including:
-/// - Decoding images from file
-/// - Removing EXIF metadata (date, location, camera info)
-/// - Re-encoding images without metadata
+/// - Removing EXIF metadata (date, location, camera info, focus points)
+/// - Re-encoding images without metadata using flutter_image_compress
 class ImageProcessingDataSource {
   
   /// Processes an image to remove all EXIF metadata.
@@ -15,9 +13,9 @@ class ImageProcessingDataSource {
   /// [inputPath] - Path to the input image file.
   /// [outputPath] - Path where the processed image will be saved.
   ///
-  /// This method:
-  /// 1. Reads and decodes the image
-  /// 2. Re-encodes the image without preserving EXIF data
+  /// This method uses flutter_image_compress which:
+  /// 1. Decodes the image
+  /// 2. Re-encodes without EXIF data (keepExif: false is default)
   /// 3. Saves to output path
   ///
   /// Returns the output path on success.
@@ -27,43 +25,43 @@ class ImageProcessingDataSource {
     required String outputPath,
   }) async {
     final inputFile = File(inputPath);
-    final bytes = await inputFile.readAsBytes();
     
-    // Decode the image
-    final image = img.decodeImage(bytes);
-    if (image == null) {
-      throw Exception('Failed to decode image: $inputPath');
+    if (!await inputFile.exists()) {
+      throw Exception('Input file does not exist: $inputPath');
     }
     
-    // Clear EXIF data by re-encoding without metadata
-    // The image package does not preserve EXIF by default when encoding
-    final extension = outputPath.toLowerCase().split('.').last;
-    Uint8List outputBytes;
+    // Use flutter_image_compress to re-encode without EXIF
+    // keepExif defaults to false, which strips all EXIF metadata
+    final result = await FlutterImageCompress.compressAndGetFile(
+      inputPath,
+      outputPath,
+      quality: 95,
+      keepExif: false, // Explicitly remove all EXIF data
+      format: _getCompressFormat(inputPath),
+    );
     
-    switch (extension) {
-      case 'jpg':
-      case 'jpeg':
-        // JPEG encoding without EXIF metadata
-        outputBytes = Uint8List.fromList(img.encodeJpg(image, quality: 95));
-        break;
+    if (result == null) {
+      throw Exception('Failed to compress image: $inputPath');
+    }
+    
+    return result.path;
+  }
+  
+  /// Gets the compress format based on file extension.
+  CompressFormat _getCompressFormat(String path) {
+    final ext = path.toLowerCase().split('.').last;
+    switch (ext) {
       case 'png':
-        // PNG encoding (PNG doesn't have EXIF in the same way)
-        outputBytes = Uint8List.fromList(img.encodePng(image));
-        break;
+        return CompressFormat.png;
       case 'webp':
-        // WebP encoding
-        outputBytes = Uint8List.fromList(img.encodeJpg(image, quality: 95));
-        break;
+        return CompressFormat.webp;
+      case 'heic':
+      case 'heif':
+        // Convert HEIC/HEIF to JPEG for compatibility
+        return CompressFormat.jpeg;
       default:
-        // Default to JPEG
-        outputBytes = Uint8List.fromList(img.encodeJpg(image, quality: 95));
+        return CompressFormat.jpeg;
     }
-    
-    // Write the processed image
-    final outputFile = File(outputPath);
-    await outputFile.writeAsBytes(outputBytes);
-    
-    return outputPath;
   }
   
   /// Checks if a file is an image based on extension.
@@ -80,6 +78,9 @@ class ImageProcessingDataSource {
     if (ext == 'heic' || ext == 'heif') {
       return 'jpg';
     }
-    return ext;
+    if (ext == 'png') {
+      return 'png';
+    }
+    return 'jpg';
   }
 }

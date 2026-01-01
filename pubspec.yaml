@@ -26,6 +26,7 @@ dependencies:
   dartz: ^0.10.1
   # Sprint 6: Image processing with EXIF removal
   image: ^4.3.0
+  flutter_image_compress: ^2.3.0
 
 dev_dependencies:
   flutter_test:
