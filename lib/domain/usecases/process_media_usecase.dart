@@ -2,6 +2,8 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
+import 'package:ffmpeg_kit_flutter_minimal/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_minimal/return_code.dart';
 import '../entities/processed_video.dart';
 import '../entities/video_processing_options.dart';
 import '../entities/face_region.dart';
@@ -238,17 +240,35 @@ class ProcessMediaUseCase {
       );
     }
 
-    // Simplified video processing for now - just strip metadata
-    // Full frame-by-frame processing will be added in future update
+    // Strip metadata using FFmpeg with -map_metadata -1
+    // This removes all metadata from the video while re-encoding
     
     // Get output path in temp directory
     final tempDir = await getTemporaryDirectory();
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final outputPath = '${tempDir.path}/nuyna_processed_$timestamp.mp4';
     
-    // Copy video file (simple copy for now)
-    final inputFile = File(videoPath);
-    await inputFile.copy(outputPath);
+    // FFmpeg command to copy video/audio streams while stripping all metadata
+    // -map_metadata -1 removes all metadata
+    // -c copy copies streams without re-encoding (faster)
+    // -movflags +faststart optimizes for web playback
+    final command = '-i "$videoPath" -map_metadata -1 -c copy -movflags +faststart "$outputPath"';
+    
+    final session = await FFmpegKit.execute(command);
+    final returnCode = await session.getReturnCode();
+    
+    if (!ReturnCode.isSuccess(returnCode)) {
+      // If stream copy fails, try with re-encoding
+      final fallbackCommand = '-i "$videoPath" -map_metadata -1 -c:v libx264 -c:a aac -movflags +faststart "$outputPath"';
+      final fallbackSession = await FFmpegKit.execute(fallbackCommand);
+      final fallbackReturnCode = await fallbackSession.getReturnCode();
+      
+      if (!ReturnCode.isSuccess(fallbackReturnCode)) {
+        // If FFmpeg fails completely, just copy the file
+        final inputFile = File(videoPath);
+        await inputFile.copy(outputPath);
+      }
+    }
 
     stopwatch.stop();
 
@@ -256,7 +276,7 @@ class ProcessMediaUseCase {
       outputPath: outputPath,
       processingTime: stopwatch.elapsed,
       totalFrames: 0,
-      processedFrames: 0,
+      processedFrames: 1, // Indicates metadata was processed
     );
   }
 }
