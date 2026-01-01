@@ -131,7 +131,7 @@ void main() {
       await viewModel.processVideo();
 
       final state = container.read(homeViewModelProvider);
-      expect(state.errorMessage, 'Please select a video first');
+      expect(state.errorMessage, 'Please select media first');
       expect(state.isProcessing, false);
     });
   });
