@@ -1,7 +1,4 @@
 import 'dart:io';
-import 'dart:ui' as ui;
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 
 /// Data source for processing static images with complete metadata removal.
