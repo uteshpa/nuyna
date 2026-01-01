@@ -5,7 +5,7 @@ import 'package:video_player/video_player.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
 import 'package:nuyna/domain/entities/processed_video.dart';
 
-/// Result page to display processed video with export options
+/// Result page to display processed media (image or video) with export options
 class ResultPage extends ConsumerStatefulWidget {
   final ProcessedVideo processedVideo;
 
@@ -16,38 +16,55 @@ class ResultPage extends ConsumerStatefulWidget {
 }
 
 class _ResultPageState extends ConsumerState<ResultPage> {
-  late VideoPlayerController _controller;
+  VideoPlayerController? _controller;
   bool _isInitialized = false;
   bool _isSaving = false;
+  bool _isImage = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeVideoPlayer();
+    _initializeMedia();
   }
 
-  Future<void> _initializeVideoPlayer() async {
-    _controller = VideoPlayerController.file(File(widget.processedVideo.outputPath));
-    try {
-      await _controller.initialize();
+  bool _checkIsImage(String path) {
+    final ext = path.toLowerCase().split('.').last;
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].contains(ext);
+  }
+
+  Future<void> _initializeMedia() async {
+    final path = widget.processedVideo.outputPath;
+    _isImage = _checkIsImage(path);
+
+    if (_isImage) {
+      // For images, just mark as initialized
       setState(() {
         _isInitialized = true;
       });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load video: $e'),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
+    } else {
+      // For videos, initialize the player
+      _controller = VideoPlayerController.file(File(path));
+      try {
+        await _controller!.initialize();
+        setState(() {
+          _isInitialized = true;
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to load video: $e'),
+              backgroundColor: Colors.red.shade700,
+            ),
+          );
+        }
       }
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -59,13 +76,19 @@ class _ResultPageState extends ConsumerState<ResultPage> {
     });
 
     try {
-      final result = await GallerySaver.saveVideo(widget.processedVideo.outputPath);
+      bool? result;
+      if (_isImage) {
+        result = await GallerySaver.saveImage(widget.processedVideo.outputPath);
+      } else {
+        result = await GallerySaver.saveVideo(widget.processedVideo.outputPath);
+      }
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result == true 
-                ? 'Video saved to gallery!' 
-                : 'Failed to save video'),
+                ? 'Saved to gallery!' 
+                : 'Failed to save'),
             backgroundColor: result == true 
                 ? Colors.green.shade700 
                 : Colors.red.shade700,
@@ -76,7 +99,7 @@ class _ResultPageState extends ConsumerState<ResultPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving video: $e'),
+            content: Text('Error saving: $e'),
             backgroundColor: Colors.red.shade700,
           ),
         );
@@ -103,10 +126,10 @@ class _ResultPageState extends ConsumerState<ResultPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Video Player Section
+            // Media Display Section
             Expanded(
               flex: 3,
-              child: _buildVideoPlayer(),
+              child: _buildMediaDisplay(),
             ),
             // Action Buttons
             _buildActionButtons(),
@@ -116,7 +139,7 @@ class _ResultPageState extends ConsumerState<ResultPage> {
     );
   }
 
-  Widget _buildVideoPlayer() {
+  Widget _buildMediaDisplay() {
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -133,55 +156,85 @@ class _ResultPageState extends ConsumerState<ResultPage> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: _isInitialized
-            ? Stack(
-                alignment: Alignment.center,
-                children: [
-                  AspectRatio(
-                    aspectRatio: _controller.value.aspectRatio,
-                    child: VideoPlayer(_controller),
-                  ),
-                  // Play/Pause overlay
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (_controller.value.isPlaying) {
-                          _controller.pause();
-                        } else {
-                          _controller.play();
-                        }
-                      });
-                    },
-                    child: Container(
-                      color: Colors.transparent,
-                      child: AnimatedOpacity(
-                        opacity: _controller.value.isPlaying ? 0.0 : 1.0,
-                        duration: const Duration(milliseconds: 300),
-                        child: Container(
-                          width: 72,
-                          height: 72,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _controller.value.isPlaying 
-                                ? Icons.pause 
-                                : Icons.play_arrow,
-                            size: 48,
-                            color: Colors.green.shade700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              )
+            ? (_isImage ? _buildImageView() : _buildVideoPlayer())
             : const Center(
                 child: CircularProgressIndicator(
                   color: Colors.white,
                 ),
               ),
       ),
+    );
+  }
+
+  Widget _buildImageView() {
+    return Image.file(
+      File(widget.processedVideo.outputPath),
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.broken_image, size: 48, color: Colors.grey.shade400),
+            const SizedBox(height: 8),
+            Text(
+              'Failed to load image',
+              style: TextStyle(color: Colors.grey.shade400),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVideoPlayer() {
+    if (_controller == null) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+    
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        AspectRatio(
+          aspectRatio: _controller!.value.aspectRatio,
+          child: VideoPlayer(_controller!),
+        ),
+        // Play/Pause overlay
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              if (_controller!.value.isPlaying) {
+                _controller!.pause();
+              } else {
+                _controller!.play();
+              }
+            });
+          },
+          child: Container(
+            color: Colors.transparent,
+            child: AnimatedOpacity(
+              opacity: _controller!.value.isPlaying ? 0.0 : 1.0,
+              duration: const Duration(milliseconds: 300),
+              child: Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _controller!.value.isPlaying 
+                      ? Icons.pause 
+                      : Icons.play_arrow,
+                  size: 48,
+                  color: Colors.green.shade700,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -239,4 +292,3 @@ class _ResultPageState extends ConsumerState<ResultPage> {
     );
   }
 }
-
