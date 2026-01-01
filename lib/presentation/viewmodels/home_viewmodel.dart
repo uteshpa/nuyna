@@ -92,6 +92,24 @@ class HomeViewModel extends Notifier<HomeState> {
     );
   }
 
+  /// Toggle finger guard (fingerprint protection) option
+  void toggleFingerGuard() {
+    state = state.copyWith(
+      options: state.options.copyWith(
+        enableFingerGuard: !state.options.enableFingerGuard,
+      ),
+    );
+  }
+
+  /// Toggle advanced face obfuscation option
+  void toggleAdvancedFaceObfuscation() {
+    state = state.copyWith(
+      options: state.options.copyWith(
+        enableAdvancedFaceObfuscation: !state.options.enableAdvancedFaceObfuscation,
+      ),
+    );
+  }
+
   /// Toggle face blur option
   void toggleFaceBlur() {
     state = state.copyWith(
