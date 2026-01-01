@@ -75,6 +75,55 @@ class MediaPipeDataSource {
   void close() {
     _isInitialized = false;
   }
+
+  /// Detect hand landmarks for fingerprint scrubbing
+  ///
+  /// Returns a list of [HandLandmarkResult] with normalized coordinates
+  Future<List<HandLandmarkResult>> detectHandLandmarks(
+    Uint8List imageBytes,
+    int width,
+    int height,
+  ) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    // Placeholder implementation - returns empty list
+    // In production, integrate with MediaPipe Hands or TensorFlow Lite
+    // This allows the app to work without crashing when hands aren't detected
+    return [];
+  }
+}
+
+/// Result containing hand landmarks with normalized coordinates
+class HandLandmarkResult {
+  /// List of 21 landmark points with normalized (0-1) coordinates
+  final List<NormalizedLandmark> landmarks;
+
+  /// Estimated hand size (normalized)
+  final double handSize;
+
+  /// Detection confidence
+  final double confidence;
+
+  const HandLandmarkResult({
+    required this.landmarks,
+    required this.handSize,
+    required this.confidence,
+  });
+}
+
+/// Normalized landmark point (0-1 range)
+class NormalizedLandmark {
+  final double x;
+  final double y;
+  final double z;
+
+  const NormalizedLandmark({
+    required this.x,
+    required this.y,
+    this.z = 0.0,
+  });
 }
 
 /// Result of hand detection containing landmarks

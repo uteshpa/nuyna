@@ -1,7 +1,8 @@
 /// Video processing settings entity.
 ///
 /// This entity holds configuration options for video processing,
-/// including face blur, iris block, finger guard, and metadata stripping.
+/// including face blur, iris block, finger guard, advanced face obfuscation,
+/// and metadata stripping.
 class VideoProcessingOptions {
   /// Enable face blur processing.
   final bool enableFaceBlur;
@@ -9,8 +10,11 @@ class VideoProcessingOptions {
   /// Enable iris block processing.
   final bool enableIrisBlock;
 
-  /// Enable finger guard processing.
+  /// Enable finger guard processing (fingerprint scrubbing).
   final bool enableFingerGuard;
+
+  /// Enable advanced face obfuscation (adversarial noise + landmark displacement).
+  final bool enableAdvancedFaceObfuscation;
 
   /// Enable metadata stripping.
   final bool enableMetadataStrip;
@@ -29,6 +33,7 @@ class VideoProcessingOptions {
   /// - [enableFaceBlur]: true
   /// - [enableIrisBlock]: false
   /// - [enableFingerGuard]: false
+  /// - [enableAdvancedFaceObfuscation]: false
   /// - [enableMetadataStrip]: true
   /// - [blurStrength]: 15.0
   /// - [detectionSensitivity]: 0.7
@@ -36,6 +41,7 @@ class VideoProcessingOptions {
     this.enableFaceBlur = true,
     this.enableIrisBlock = false,
     this.enableFingerGuard = false,
+    this.enableAdvancedFaceObfuscation = false,
     this.enableMetadataStrip = true,
     this.blurStrength = 15.0,
     this.detectionSensitivity = 0.7,
@@ -47,6 +53,7 @@ class VideoProcessingOptions {
     bool? enableFaceBlur,
     bool? enableIrisBlock,
     bool? enableFingerGuard,
+    bool? enableAdvancedFaceObfuscation,
     bool? enableMetadataStrip,
     double? blurStrength,
     double? detectionSensitivity,
@@ -55,6 +62,7 @@ class VideoProcessingOptions {
       enableFaceBlur: enableFaceBlur ?? this.enableFaceBlur,
       enableIrisBlock: enableIrisBlock ?? this.enableIrisBlock,
       enableFingerGuard: enableFingerGuard ?? this.enableFingerGuard,
+      enableAdvancedFaceObfuscation: enableAdvancedFaceObfuscation ?? this.enableAdvancedFaceObfuscation,
       enableMetadataStrip: enableMetadataStrip ?? this.enableMetadataStrip,
       blurStrength: blurStrength ?? this.blurStrength,
       detectionSensitivity: detectionSensitivity ?? this.detectionSensitivity,
