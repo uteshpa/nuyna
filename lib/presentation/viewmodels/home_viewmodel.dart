@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nuyna/core/di/service_locator.dart';
 import 'package:nuyna/domain/entities/video_processing_options.dart';
 import 'package:nuyna/domain/entities/processed_video.dart';
-import 'package:nuyna/domain/usecases/process_video_usecase.dart';
+import 'package:nuyna/domain/usecases/process_media_usecase.dart';
 
 /// State class for the Home screen
 class HomeState {
@@ -47,13 +47,13 @@ class HomeState {
 
 /// ViewModel (Notifier) for the Home screen
 /// 
-/// Integrates with ProcessVideoUseCase for real video processing.
+/// Integrates with ProcessMediaUseCase for image and video processing.
 class HomeViewModel extends Notifier<HomeState> {
-  late final ProcessVideoUseCase _processVideoUseCase;
+  late final ProcessMediaUseCase _processMediaUseCase;
 
   @override
   HomeState build() {
-    _processVideoUseCase = getIt<ProcessVideoUseCase>();
+    _processMediaUseCase = getIt<ProcessMediaUseCase>();
     return HomeState();
   }
 
@@ -101,10 +101,10 @@ class HomeViewModel extends Notifier<HomeState> {
     );
   }
 
-  /// Start video processing using ProcessVideoUseCase
+  /// Start media processing using ProcessMediaUseCase
   Future<void> processVideo() async {
     if (state.selectedVideoPath == null) {
-      state = state.copyWith(errorMessage: 'Please select a video first');
+      state = state.copyWith(errorMessage: 'Please select media first');
       return;
     }
 
@@ -118,8 +118,8 @@ class HomeViewModel extends Notifier<HomeState> {
       // Update progress to 10% - starting
       state = state.copyWith(processingProgress: 0.1);
 
-      final result = await _processVideoUseCase.execute(
-        videoPath: state.selectedVideoPath!,
+      final result = await _processMediaUseCase.execute(
+        mediaPath: state.selectedVideoPath!,
         options: state.options,
       );
 
