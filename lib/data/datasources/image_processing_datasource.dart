@@ -1,22 +1,34 @@
 import 'dart:io';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:image/image.dart' as img;
 
-/// Data source for processing static images with EXIF metadata removal.
+/// Data source for processing static images with complete metadata removal.
 ///
 /// This class handles image processing operations including:
-/// - Removing EXIF metadata (date, location, camera info, focus points)
-/// - Re-encoding images without metadata using flutter_image_compress
+/// - Complete EXIF metadata removal (date, location, camera info)
+/// - Apple MakerNote and XMP removal
+/// - AF (autofocus) point data removal
+/// - Re-rendering image at pixel level to strip all embedded data
 class ImageProcessingDataSource {
   
-  /// Processes an image to remove all EXIF metadata.
+  /// Processes an image to remove ALL metadata by re-rendering at pixel level.
   ///
   /// [inputPath] - Path to the input image file.
   /// [outputPath] - Path where the processed image will be saved.
   ///
-  /// This method uses flutter_image_compress which:
-  /// 1. Decodes the image
-  /// 2. Re-encodes without EXIF data (keepExif: false is default)
-  /// 3. Saves to output path
+  /// This method:
+  /// 1. Reads raw image bytes
+  /// 2. Decodes to raw pixel data using 'image' package
+  /// 3. Re-encodes from scratch without any metadata
+  /// 4. Saves to output path
+  ///
+  /// This approach ensures complete removal of:
+  /// - EXIF data (date, GPS, camera info)
+  /// - Apple MakerNote (AF points, focus areas)
+  /// - XMP metadata
+  /// - All other embedded data
   ///
   /// Returns the output path on success.
   /// Throws an exception if processing fails.
@@ -30,38 +42,51 @@ class ImageProcessingDataSource {
       throw Exception('Input file does not exist: $inputPath');
     }
     
-    // Use flutter_image_compress to re-encode without EXIF
-    // keepExif defaults to false, which strips all EXIF metadata
-    final result = await FlutterImageCompress.compressAndGetFile(
-      inputPath,
-      outputPath,
-      quality: 95,
-      keepExif: false, // Explicitly remove all EXIF data
-      format: _getCompressFormat(inputPath),
+    final bytes = await inputFile.readAsBytes();
+    
+    // Decode image to raw pixel data
+    img.Image? image = img.decodeImage(bytes);
+    
+    if (image == null) {
+      throw Exception('Failed to decode image: $inputPath');
+    }
+    
+    // Create a clean copy of the image (strips all metadata)
+    // by creating a new image with just the pixel data
+    final cleanImage = img.Image(
+      width: image.width,
+      height: image.height,
+      numChannels: image.numChannels,
     );
     
-    if (result == null) {
-      throw Exception('Failed to compress image: $inputPath');
+    // Copy pixel data only, no metadata
+    for (int y = 0; y < image.height; y++) {
+      for (int x = 0; x < image.width; x++) {
+        cleanImage.setPixel(x, y, image.getPixel(x, y));
+      }
     }
     
-    return result.path;
-  }
-  
-  /// Gets the compress format based on file extension.
-  CompressFormat _getCompressFormat(String path) {
-    final ext = path.toLowerCase().split('.').last;
-    switch (ext) {
+    // Determine output format and encode
+    final extension = outputPath.toLowerCase().split('.').last;
+    Uint8List outputBytes;
+    
+    switch (extension) {
       case 'png':
-        return CompressFormat.png;
-      case 'webp':
-        return CompressFormat.webp;
-      case 'heic':
-      case 'heif':
-        // Convert HEIC/HEIF to JPEG for compatibility
-        return CompressFormat.jpeg;
+        outputBytes = Uint8List.fromList(img.encodePng(cleanImage));
+        break;
+      case 'jpg':
+      case 'jpeg':
       default:
-        return CompressFormat.jpeg;
+        // JPEG encoding with no EXIF
+        outputBytes = Uint8List.fromList(img.encodeJpg(cleanImage, quality: 95));
+        break;
     }
+    
+    // Write the clean image
+    final outputFile = File(outputPath);
+    await outputFile.writeAsBytes(outputBytes);
+    
+    return outputPath;
   }
   
   /// Checks if a file is an image based on extension.
