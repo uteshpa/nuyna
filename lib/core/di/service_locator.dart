@@ -6,6 +6,8 @@ import 'package:nuyna/data/datasources/ffmpeg_datasource.dart';
 import 'package:nuyna/data/datasources/storage_datasource.dart';
 import 'package:nuyna/data/datasources/mediapipe_datasource.dart';
 import 'package:nuyna/data/datasources/image_processing_datasource.dart';
+import 'package:nuyna/data/datasources/fingerprint_scrubber_service.dart';
+import 'package:nuyna/data/datasources/facial_obfuscator_service.dart';
 
 // Repositories
 import 'package:nuyna/domain/repositories/face_detection_repository.dart';
@@ -16,6 +18,8 @@ import 'package:nuyna/data/repositories/video_repository_impl.dart';
 // UseCases
 import 'package:nuyna/domain/usecases/process_video_usecase.dart';
 import 'package:nuyna/domain/usecases/process_media_usecase.dart';
+import 'package:nuyna/domain/usecases/scrub_fingerprints_usecase.dart';
+import 'package:nuyna/domain/usecases/obfuscate_face_usecase.dart';
 
 /// Global service locator instance
 final getIt = GetIt.instance;
@@ -31,6 +35,10 @@ void setupLocator() {
   getIt.registerLazySingleton<StorageDataSource>(() => StorageDataSource());
   getIt.registerLazySingleton<MediaPipeDataSource>(() => MediaPipeDataSource());
   getIt.registerLazySingleton<ImageProcessingDataSource>(() => ImageProcessingDataSource());
+  
+  // Sprint 6: Level 2 Protection Services
+  getIt.registerLazySingleton<FingerprintScrubberService>(() => FingerprintScrubberService());
+  getIt.registerLazySingleton<FacialObfuscatorService>(() => FacialObfuscatorService());
 
   // Repositories
   getIt.registerLazySingleton<FaceDetectionRepository>(
@@ -58,6 +66,19 @@ void setupLocator() {
       getIt<VideoRepository>(),
       getIt<FaceDetectionRepository>(),
       getIt<ImageProcessingDataSource>(),
+    ),
+  );
+  
+  // Sprint 6: Level 2 Protection UseCases
+  getIt.registerLazySingleton<ScrubFingerprintsUseCase>(
+    () => ScrubFingerprintsUseCase(
+      getIt<MediaPipeDataSource>(),
+      getIt<FingerprintScrubberService>(),
+    ),
+  );
+  getIt.registerLazySingleton<ObfuscateFaceUseCase>(
+    () => ObfuscateFaceUseCase(
+      getIt<FacialObfuscatorService>(),
     ),
   );
 }
