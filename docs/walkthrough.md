@@ -408,7 +408,7 @@ flutter build apk
 
 - **Remote**: github-nuyna:uteshpa/nuyna.git
 - **Branch**: main
-- **Status**: ✅ Sprint 5 completed and pushed
+- **Status**: ✅ Sprint 6 completed and pushed
 
 ---
 
@@ -421,7 +421,15 @@ flutter build apk
 | Sprint 3 | Presentation Layer | ✅ Complete |
 | Sprint 4 | Integration & DI | ✅ Complete |
 | Sprint 5 | Results & Export | ✅ Complete |
-| Sprint 6 | Polish & Release | 🔜 Planned |
+| Sprint 6 | Level 2 Protection | ✅ Complete |
+| Sprint 7 | Native Detection | 🔜 Planned |
+
+### Sprint 6 Deliverables
+- Palm Scrubber architecture (fingerprint protection)
+- Facial Obfuscator with 3-layer defense
+- Video metadata removal via FFmpeg
+- UI toggles for new protection options
+- Graceful error handling for FFmpeg plugin
 
 ### Sprint 5 Deliverables
 - Result page with video player / image display
@@ -430,4 +438,3 @@ flutter build apk
 - Complete metadata removal (GPS, camera info, EXIF)
 - State management and cache cleanup
 - iOS device deployment and testing
-
