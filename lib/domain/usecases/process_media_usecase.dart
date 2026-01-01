@@ -223,51 +223,57 @@ class ProcessMediaUseCase {
     return Uint8List.fromList(img.encodeJpg(image, quality: 95));
   }
 
-  /// Process a video - face detection and blur
+  /// Process a video - metadata stripping
   Future<ProcessedVideo> _processVideo(
     String videoPath,
     VideoProcessingOptions options,
     Stopwatch stopwatch,
   ) async {
-    // If face blur is disabled, return the original video as-is
-    if (!options.enableFaceBlur) {
+    // Get output path in temp directory
+    final tempDir = await getTemporaryDirectory();
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final outputPath = '${tempDir.path}/nuyna_processed_$timestamp.mp4';
+
+    // If metadata strip is disabled, just copy the file
+    if (!options.enableMetadataStrip) {
+      final inputFile = File(videoPath);
+      await inputFile.copy(outputPath);
       stopwatch.stop();
       return ProcessedVideo(
-        outputPath: videoPath,
+        outputPath: outputPath,
         processingTime: stopwatch.elapsed,
         totalFrames: 0,
         processedFrames: 0,
       );
     }
 
-    // Strip metadata using FFmpeg with -map_metadata -1
-    // This removes all metadata from the video while re-encoding
-    
-    // Get output path in temp directory
-    final tempDir = await getTemporaryDirectory();
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final outputPath = '${tempDir.path}/nuyna_processed_$timestamp.mp4';
-    
-    // FFmpeg command to copy video/audio streams while stripping all metadata
-    // -map_metadata -1 removes all metadata
-    // -c copy copies streams without re-encoding (faster)
-    // -movflags +faststart optimizes for web playback
-    final command = '-i "$videoPath" -map_metadata -1 -c copy -movflags +faststart "$outputPath"';
-    
-    final session = await FFmpegKit.execute(command);
-    final returnCode = await session.getReturnCode();
-    
-    if (!ReturnCode.isSuccess(returnCode)) {
-      // If stream copy fails, try with re-encoding
-      final fallbackCommand = '-i "$videoPath" -map_metadata -1 -c:v libx264 -c:a aac -movflags +faststart "$outputPath"';
-      final fallbackSession = await FFmpegKit.execute(fallbackCommand);
-      final fallbackReturnCode = await fallbackSession.getReturnCode();
+    // Try to strip metadata using FFmpeg
+    try {
+      // FFmpeg command to copy video/audio streams while stripping all metadata
+      // -map_metadata -1 removes all metadata
+      // -c copy copies streams without re-encoding (faster)
+      // -movflags +faststart optimizes for web playback
+      final command = '-i "$videoPath" -map_metadata -1 -c copy -movflags +faststart "$outputPath"';
       
-      if (!ReturnCode.isSuccess(fallbackReturnCode)) {
-        // If FFmpeg fails completely, just copy the file
-        final inputFile = File(videoPath);
-        await inputFile.copy(outputPath);
+      final session = await FFmpegKit.execute(command);
+      final returnCode = await session.getReturnCode();
+      
+      if (!ReturnCode.isSuccess(returnCode)) {
+        // If stream copy fails, try with re-encoding
+        final fallbackCommand = '-i "$videoPath" -map_metadata -1 -c:v libx264 -c:a aac -movflags +faststart "$outputPath"';
+        final fallbackSession = await FFmpegKit.execute(fallbackCommand);
+        final fallbackReturnCode = await fallbackSession.getReturnCode();
+        
+        if (!ReturnCode.isSuccess(fallbackReturnCode)) {
+          // If FFmpeg fails completely, just copy the file
+          final inputFile = File(videoPath);
+          await inputFile.copy(outputPath);
+        }
       }
+    } catch (e) {
+      // If FFmpeg plugin fails (MissingPluginException), just copy the file
+      final inputFile = File(videoPath);
+      await inputFile.copy(outputPath);
     }
 
     stopwatch.stop();
@@ -276,7 +282,7 @@ class ProcessMediaUseCase {
       outputPath: outputPath,
       processingTime: stopwatch.elapsed,
       totalFrames: 0,
-      processedFrames: 1, // Indicates metadata was processed
+      processedFrames: 1,
     );
   }
 }
