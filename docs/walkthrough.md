@@ -398,9 +398,9 @@ flutter build apk
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| Flutter | 3.x | Dart SDK included |
-| Gradle | 9.2.1 | Native installation (Antigravity addon removed) |
-| Java | 1.8.0_461 | Oracle Corporation |
+| Flutter | 3.35.7 | Dart SDK 3.9.2 |
+| Xcode | 26.2 | iOS 15.5+ deployment target |
+| Test Device | iPhone 11 Pro Max | iOS 26.2 |
 
 ---
 
@@ -408,4 +408,26 @@ flutter build apk
 
 - **Remote**: github-nuyna:uteshpa/nuyna.git
 - **Branch**: main
-- **Status**: ✅ Sprint 2 completed and pushed
+- **Status**: ✅ Sprint 5 completed and pushed
+
+---
+
+## 🚀 Sprint Progress
+
+| Sprint | Focus | Status |
+|--------|-------|--------|
+| Sprint 1 | Project Setup | ✅ Complete |
+| Sprint 2 | Data Layer | ✅ Complete |
+| Sprint 3 | Presentation Layer | ✅ Complete |
+| Sprint 4 | Integration & DI | ✅ Complete |
+| Sprint 5 | Results & Export | ✅ Complete |
+| Sprint 6 | Polish & Release | 🔜 Planned |
+
+### Sprint 5 Deliverables
+- Result page with video player / image display
+- Save to Gallery functionality
+- Unified media selection (images + videos)
+- Complete metadata removal (GPS, camera info, EXIF)
+- State management and cache cleanup
+- iOS device deployment and testing
+
