@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:nuyna/presentation/pages/result_page.dart';
 import 'package:nuyna/presentation/viewmodels/home_viewmodel.dart';
 
@@ -229,15 +231,29 @@ class _HomePageState extends ConsumerState<HomePage> {
                         color: Colors.grey.shade600,
                       ),
                     )
-                  : Container(
-                      color: Colors.black12,
-                      child: Center(
-                        child: Icon(
-                          Icons.videocam,
-                          size: 48,
-                          color: Colors.blue.shade600,
-                        ),
-                      ),
+                  : FutureBuilder<Uint8List?>(
+                      future: _generateVideoThumbnail(path),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return Container(
+                            color: Colors.black12,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.blue.shade600,
+                              ),
+                            ),
+                          );
+                        }
+                        if (snapshot.hasData && snapshot.data != null) {
+                          return Image.memory(
+                            snapshot.data!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => _buildVideoPlaceholder(),
+                          );
+                        }
+                        return _buildVideoPlaceholder();
+                      },
                     ),
             ),
           ),
