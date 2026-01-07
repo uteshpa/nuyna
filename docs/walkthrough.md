@@ -79,12 +79,14 @@ lib/
 #### Core Layer
 
 **[app_constants.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/core/constants/app_constants.dart)**
+
 - `defaultBlurStrength`: 15.0
 - `defaultDetectionSensitivity`: 0.5
 - `maxConcurrentFrames`: 4
 - `processingTimeout`: 10 minutes
 
 **[failures.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/core/errors/failures.dart)**
+
 - `Failure` (abstract base class)
 - `VideoProcessingFailure`
 - `FaceDetectionFailure`
@@ -95,6 +97,7 @@ lib/
 #### Domain Layer - Entities
 
 **[face_region.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/domain/entities/face_region.dart)**
+
 ```dart
 class FaceRegion {
   final Rect boundingBox;
@@ -104,6 +107,7 @@ class FaceRegion {
 ```
 
 **[face_detection_result.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/domain/entities/face_detection_result.dart)**
+
 ```dart
 class FaceDetectionResult {
   final List<FaceRegion> faces;
@@ -113,6 +117,7 @@ class FaceDetectionResult {
 ```
 
 **[processed_video.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/domain/entities/processed_video.dart)**
+
 ```dart
 class ProcessedVideo {
   final String outputPath;
@@ -123,6 +128,7 @@ class ProcessedVideo {
 ```
 
 **[video_processing_options.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/domain/entities/video_processing_options.dart)**
+
 ```dart
 class VideoProcessingOptions {
   final bool enableFaceBlur;      // default: true
@@ -139,6 +145,7 @@ class VideoProcessingOptions {
 #### Domain Layer - Repositories
 
 **[face_detection_repository.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/domain/repositories/face_detection_repository.dart)**
+
 ```dart
 abstract class FaceDetectionRepository {
   Future<FaceDetectionResult> detectFaces(List<int> imageBytes);
@@ -146,6 +153,7 @@ abstract class FaceDetectionRepository {
 ```
 
 **[video_repository.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/domain/repositories/video_repository.dart)**
+
 ```dart
 abstract class VideoRepository {
   Future<List<List<int>>> extractFrames(String videoPath);
@@ -157,6 +165,7 @@ abstract class VideoRepository {
 #### Domain Layer - Use Cases
 
 **[process_video_usecase.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/domain/usecases/process_video_usecase.dart)**
+
 ```dart
 class ProcessVideoUseCase {
   final FaceDetectionRepository faceDetectionRepository;
@@ -173,12 +182,14 @@ class ProcessVideoUseCase {
 #### Data Sources
 
 **[ml_kit_datasource.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/data/datasources/ml_kit_datasource.dart)**
+
 - Uses ML Kit with `enableLandmarks: true` for precision detection
 - `detectFacesFromImage(String imagePath)` - File-based detection
 - `detectFacesFromBytes(Uint8List imageBytes, int width, int height)` - Bytes-based detection
 - Extracts biometric landmarks: eyes, nose, mouth, ears, cheeks
 
 **[ffmpeg_datasource.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/data/datasources/ffmpeg_datasource.dart)**
+
 - `extractFrames(videoPath, outputDir)` - Extract frames at specified FPS
 - `applyPrecisionBlurFilter(...)` - Apply blur using landmark coordinates
 - `generateLandmarkBlurFilter(...)` - Generate FFmpeg complex filter string
@@ -188,6 +199,7 @@ class ProcessVideoUseCase {
 > **Precision Blur Implementation**: Uses `boxblur` with `enable='hypot(X-x,Y-y)<radius'` to blur only small circular areas around each landmark point, not the entire face bounding box.
 
 **[storage_datasource.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/data/datasources/storage_datasource.dart)**
+
 - `getTemporaryDirectory()` / `getApplicationDocumentsDirectory()`
 - `saveFile(path, bytes)` / `readFile(path)`
 - `createDirectory(path)` / `deleteDirectory(path)`
@@ -196,12 +208,14 @@ class ProcessVideoUseCase {
 #### Repository Implementations
 
 **[face_detection_repository_impl.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/data/repositories/face_detection_repository_impl.dart)**
+
 - Converts ML Kit `Face` objects to domain `FaceRegion` entities
 - Extracts landmarks: leftEye, rightEye, noseBase, mouth points, ears, cheeks
 - Handles temporary file creation/cleanup for image processing
 - Throws `FaceDetectionFailure` on errors
 
 **[video_repository_impl.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/data/repositories/video_repository_impl.dart)**
+
 - `extractFrames()` - Extract frames and read as bytes
 - `applyBlur()` - Validate inputs and apply precision blur filter
 - `processVideo()` - Full pipeline with timing and frame counting
@@ -216,6 +230,7 @@ class ProcessVideoUseCase {
 #### Presentation Layer
 
 **[home_page.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/presentation/pages/home_page.dart)**
+
 - Main UI matching wireframe design
 - nuyna logo with leaf icon
 - Video selection area with dashed border
@@ -224,6 +239,7 @@ class ProcessVideoUseCase {
 - DashedBorderPainter for custom border effect
 
 **[home_viewmodel.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/presentation/viewmodels/home_viewmodel.dart)**
+
 - Riverpod StateNotifier pattern
 - HomeState with video path, processing status, options
 - Methods: selectVideo, clearSelection, toggleMetadataStrip, toggleBiometrics, toggleFaceBlur, processVideo
@@ -232,6 +248,7 @@ class ProcessVideoUseCase {
 #### Finger Guard Data Source
 
 **[mediapipe_datasource.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/data/datasources/mediapipe_datasource.dart)**
+
 - Hand detection with 21 landmark points
 - HandDetectionResult, HandLandmark, HandType, HandLandmarkType
 - getFingertipLandmarks() - Extract 5 fingertip positions
@@ -246,6 +263,7 @@ class ProcessVideoUseCase {
 #### Dependency Injection
 
 **[service_locator.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/core/di/service_locator.dart)**
+
 - get_it based service locator
 - Registers: DataSources, Repositories, UseCases
 - `setupLocator()` called in main() before runApp()
@@ -254,6 +272,7 @@ class ProcessVideoUseCase {
 #### ViewModel Integration
 
 **[home_viewmodel.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/presentation/viewmodels/home_viewmodel.dart)**
+
 - ProcessVideoUseCase injected via get_it
 - Real video processing pipeline connected
 - Error handling with state updates
@@ -261,6 +280,7 @@ class ProcessVideoUseCase {
 #### UI Features
 
 **[home_page.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/presentation/pages/home_page.dart)**
+
 - Video picker via image_picker package
 - Process button (visible when video selected)
 - Real-time progress display
@@ -276,6 +296,7 @@ class ProcessVideoUseCase {
 #### ResultPage
 
 **[result_page.dart](file:///Users/uenoryouhei/Uteshpa/nuyna/lib/presentation/pages/result_page.dart)**
+
 - Video player with play/pause controls
 - Processing stats display (time, frames)
 - Save to Gallery button (gallery_saver_plus)
@@ -366,6 +387,7 @@ test/
 ## 🎯 Next Steps
 
 ### Sprint 6: Polish & Optimization
+
 - [ ] Real device testing (iOS/Android)
 - [ ] Performance optimization
 - [ ] UI/UX improvements
@@ -422,9 +444,18 @@ flutter build apk
 | Sprint 4 | Integration & DI | ✅ Complete |
 | Sprint 5 | Results & Export | ✅ Complete |
 | Sprint 6 | Level 2 Protection | ✅ Complete |
-| Sprint 7 | Native Detection | 🔜 Planned |
+| Sprint 7 | Native & Core Implementation | ✅ Complete |
+| Sprint 10 | Verification | 🔜 Planned |
+
+### Sprint 7 Deliverables
+
+- ML Kit integration for face detection
+- MediaPipe Platform Channel (iOS Swift + Android Kotlin)
+- UI Switches for Fingerprint Guard and Advanced Face Protection
+- 21-point dummy landmark implementation for testing
 
 ### Sprint 6 Deliverables
+
 - Palm Scrubber architecture (fingerprint protection)
 - Facial Obfuscator with 3-layer defense
 - Video metadata removal via FFmpeg
@@ -432,6 +463,7 @@ flutter build apk
 - Graceful error handling for FFmpeg plugin
 
 ### Sprint 5 Deliverables
+
 - Result page with video player / image display
 - Save to Gallery functionality
 - Unified media selection (images + videos)
