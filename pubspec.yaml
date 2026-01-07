@@ -27,6 +27,7 @@ dependencies:
   # Sprint 6: Image processing with EXIF removal
   image: ^4.3.0
   flutter_image_compress: ^2.3.0
+  video_thumbnail: ^0.5.6
 
 dev_dependencies:
   flutter_test:
