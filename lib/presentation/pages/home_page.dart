@@ -523,3 +523,35 @@ class DashedBorderPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+/// Extension methods for HomePage
+extension _HomePageHelpers on _HomePageState {
+  /// Generate thumbnail for video file
+  Future<Uint8List?> _generateVideoThumbnail(String videoPath) async {
+    try {
+      final thumbnail = await VideoThumbnail.thumbnailData(
+        video: videoPath,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 300,
+        quality: 75,
+      );
+      return thumbnail;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Build placeholder widget for video
+  Widget _buildVideoPlaceholder() {
+    return Container(
+      color: Colors.black12,
+      child: Center(
+        child: Icon(
+          Icons.videocam,
+          size: 48,
+          color: Colors.blue.shade600,
+        ),
+      ),
+    );
+  }
+}
