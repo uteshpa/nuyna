@@ -86,24 +86,35 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 60),
-            // Logo
-            _buildLogo(),
-            const Spacer(),
-            // Video Selection Area
-            _buildVideoSelectionArea(context, homeState, viewModel),
-            const SizedBox(height: 24),
-            // Process Button
-            if (homeState.selectedVideoPath != null)
-              _buildProcessButton(homeState, viewModel),
-            const Spacer(),
-            // Action Buttons
-            _buildActionButtons(homeState, viewModel),
-            const SizedBox(height: 40),
-          ],
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height - 
+                  MediaQuery.of(context).padding.top - 
+                  MediaQuery.of(context).padding.bottom,
+            ),
+            child: IntrinsicHeight(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 40),
+                  // Logo
+                  _buildLogo(),
+                  const SizedBox(height: 20),
+                  // Video Selection Area
+                  _buildVideoSelectionArea(context, homeState, viewModel),
+                  const SizedBox(height: 24),
+                  // Process Button
+                  if (homeState.selectedVideoPath != null)
+                    _buildProcessButton(homeState, viewModel),
+                  const Spacer(),
+                  // Action Buttons
+                  _buildActionButtons(homeState, viewModel),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -311,26 +322,94 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget _buildActionButtons(HomeState state, HomeViewModel viewModel) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: Column(
         children: [
-          _buildActionButton(
-            icon: Icons.description_outlined,
-            label: 'METADATA',
-            isActive: state.options.enableMetadataStrip,
-            onTap: viewModel.toggleMetadataStrip,
+          // Protection Switches
+          _buildProtectionSwitches(state, viewModel),
+          const SizedBox(height: 16),
+          // Original Action Buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildActionButton(
+                icon: Icons.description_outlined,
+                label: 'METADATA',
+                isActive: state.options.enableMetadataStrip,
+                onTap: viewModel.toggleMetadataStrip,
+              ),
+              _buildActionButton(
+                icon: Icons.fingerprint,
+                label: 'BIOMETRICS',
+                isActive: state.options.enableIrisBlock || state.options.enableFingerGuard,
+                onTap: viewModel.toggleBiometrics,
+              ),
+              _buildActionButton(
+                icon: Icons.sentiment_satisfied_alt_outlined,
+                label: 'FACE',
+                isActive: state.options.enableFaceBlur,
+                onTap: viewModel.toggleFaceBlur,
+              ),
+            ],
           ),
-          _buildActionButton(
-            icon: Icons.fingerprint,
-            label: 'BIOMETRICS',
-            isActive: state.options.enableIrisBlock || state.options.enableFingerGuard,
-            onTap: viewModel.toggleBiometrics,
+        ],
+      ),
+    );
+  }
+
+  /// Build protection switches for Level 2 features
+  Widget _buildProtectionSwitches(HomeState state, HomeViewModel viewModel) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-          _buildActionButton(
-            icon: Icons.sentiment_satisfied_alt_outlined,
-            label: 'FACE',
-            isActive: state.options.enableFaceBlur,
-            onTap: viewModel.toggleFaceBlur,
+        ],
+      ),
+      child: Column(
+        children: [
+          SwitchListTile(
+            title: const Text(
+              'Fingerprint Guard',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+            subtitle: const Text(
+              'Smooth fingerprint patterns',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            value: state.options.enableFingerGuard,
+            onChanged: (_) => viewModel.toggleFingerGuard(),
+            activeColor: const Color(0xFF4CAF50),
+            secondary: Icon(
+              Icons.fingerprint,
+              color: state.options.enableFingerGuard 
+                  ? const Color(0xFF4CAF50) 
+                  : Colors.grey,
+            ),
+          ),
+          Divider(height: 1, indent: 16, endIndent: 16),
+          SwitchListTile(
+            title: const Text(
+              'Advanced Face Protection',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+            subtitle: const Text(
+              'AI-resistant obfuscation',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            value: state.options.enableAdvancedFaceObfuscation,
+            onChanged: (_) => viewModel.toggleAdvancedFaceObfuscation(),
+            activeColor: const Color(0xFF4CAF50),
+            secondary: Icon(
+              Icons.security,
+              color: state.options.enableAdvancedFaceObfuscation 
+                  ? const Color(0xFF4CAF50) 
+                  : Colors.grey,
+            ),
           ),
         ],
       ),

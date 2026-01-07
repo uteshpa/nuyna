@@ -79,6 +79,7 @@ void setupLocator() {
   getIt.registerLazySingleton<ObfuscateFaceUseCase>(
     () => ObfuscateFaceUseCase(
       getIt<FacialObfuscatorService>(),
+      getIt<MlKitDataSource>(),
     ),
   );
 }

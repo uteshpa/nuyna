@@ -64,7 +64,8 @@ void main() {
       );
 
       expect(find.byIcon(Icons.description_outlined), findsOneWidget);
-      expect(find.byIcon(Icons.fingerprint), findsOneWidget);
+      // Fingerprint icon appears in both action button and SwitchListTile
+      expect(find.byIcon(Icons.fingerprint), findsNWidgets(2));
       expect(find.byIcon(Icons.sentiment_satisfied_alt_outlined), findsOneWidget);
     });
 

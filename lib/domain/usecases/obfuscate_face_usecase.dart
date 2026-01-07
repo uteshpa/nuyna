@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 import 'package:nuyna/domain/entities/face_region.dart';
 import 'package:nuyna/data/datasources/facial_obfuscator_service.dart';
+import 'package:nuyna/data/datasources/ml_kit_datasource.dart';
+import 'dart:ui' as ui;
 
 /// Use case for applying advanced facial obfuscation.
 ///
@@ -10,9 +12,93 @@ import 'package:nuyna/data/datasources/facial_obfuscator_service.dart';
 /// - Layer 3: Remove high-frequency components via smoothing
 class ObfuscateFaceUseCase {
   final FacialObfuscatorService _obfuscatorService;
+  final MlKitDataSource _mlKitDataSource;
 
   /// Creates a new [ObfuscateFaceUseCase] instance.
-  ObfuscateFaceUseCase(this._obfuscatorService);
+  ObfuscateFaceUseCase(this._obfuscatorService, this._mlKitDataSource);
+
+  /// Executes advanced facial obfuscation on an image with internal face detection.
+  ///
+  /// [imageBytes] - The raw image data.
+  /// [width] - Image width in pixels.
+  /// [height] - Image height in pixels.
+  ///
+  /// Returns the processed image bytes with faces obfuscated.
+  Future<Uint8List> executeWithDetection({
+    required Uint8List imageBytes,
+    required int width,
+    required int height,
+  }) async {
+    // Detect faces using ML Kit
+    final faces = await _mlKitDataSource.detectFacesFromBytes(
+      imageBytes,
+      width,
+      height,
+    );
+
+    // If no faces detected, return original image
+    if (faces.isEmpty) {
+      return imageBytes;
+    }
+
+    // Convert ML Kit faces to FaceRegion
+    final faceRegions = faces.map((face) {
+      final boundingBox = face.boundingBox;
+      return FaceRegion(
+        boundingBox: ui.Rect.fromLTWH(
+          boundingBox.left / width,
+          boundingBox.top / height,
+          boundingBox.width / width,
+          boundingBox.height / height,
+        ),
+        landmarks: _extractLandmarks(face, width, height),
+        confidence: 0.9, // ML Kit doesn't provide confidence, assume high
+      );
+    }).toList();
+
+    // Process with detected faces
+    return execute(
+      imageBytes: imageBytes,
+      width: width,
+      height: height,
+      faceRegions: faceRegions,
+    );
+  }
+
+  /// Extracts landmark offsets from ML Kit Face
+  List<ui.Offset> _extractLandmarks(dynamic face, int width, int height) {
+    final landmarks = <ui.Offset>[];
+    
+    // Try to extract key landmarks (eyes, nose, mouth)
+    try {
+      final leftEye = face.getLandmark(0); // FaceLandmarkType.leftEye
+      final rightEye = face.getLandmark(1); // FaceLandmarkType.rightEye
+      final nose = face.getLandmark(2); // FaceLandmarkType.noseBase
+      
+      if (leftEye != null) {
+        landmarks.add(ui.Offset(
+          leftEye.position.x / width,
+          leftEye.position.y / height,
+        ));
+      }
+      if (rightEye != null) {
+        landmarks.add(ui.Offset(
+          rightEye.position.x / width,
+          rightEye.position.y / height,
+        ));
+      }
+      if (nose != null) {
+        landmarks.add(ui.Offset(
+          nose.position.x / width,
+          nose.position.y / height,
+        ));
+      }
+    } catch (e) {
+      // If landmark extraction fails, return empty list
+    }
+    
+    return landmarks;
+  }
 
   /// Executes advanced facial obfuscation on an image.
   ///
