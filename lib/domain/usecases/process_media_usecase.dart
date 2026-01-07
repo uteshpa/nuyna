@@ -321,7 +321,7 @@ class ProcessMediaUseCase {
                   width,
                   height,
                   detectionResult.faces,
-                  options.blurStrength,
+                  options.blurStrength.toInt(),
                 );
               }
             } catch (e) {

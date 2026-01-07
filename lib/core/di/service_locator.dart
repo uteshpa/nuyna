@@ -8,6 +8,7 @@ import 'package:nuyna/data/datasources/mediapipe_datasource.dart';
 import 'package:nuyna/data/datasources/image_processing_datasource.dart';
 import 'package:nuyna/data/datasources/fingerprint_scrubber_service.dart';
 import 'package:nuyna/data/datasources/facial_obfuscator_service.dart';
+import 'package:nuyna/data/datasources/settings_datasource.dart';
 
 // Repositories
 import 'package:nuyna/domain/repositories/face_detection_repository.dart';
@@ -39,6 +40,9 @@ void setupLocator() {
   // Sprint 6: Level 2 Protection Services
   getIt.registerLazySingleton<FingerprintScrubberService>(() => FingerprintScrubberService());
   getIt.registerLazySingleton<FacialObfuscatorService>(() => FacialObfuscatorService());
+  
+  // Sprint 8: Settings persistence
+  getIt.registerLazySingleton<SettingsDataSource>(() => SettingsDataSource());
 
   // Repositories
   getIt.registerLazySingleton<FaceDetectionRepository>(
