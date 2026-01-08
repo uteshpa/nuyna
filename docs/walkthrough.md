@@ -430,7 +430,7 @@ flutter build apk
 
 - **Remote**: github-nuyna:uteshpa/nuyna.git
 - **Branch**: main
-- **Status**: ✅ Sprint 6 completed and pushed
+- **Status**: ✅ Sprint 8 completed and pushed
 
 ---
 
@@ -445,7 +445,15 @@ flutter build apk
 | Sprint 5 | Results & Export | ✅ Complete |
 | Sprint 6 | Level 2 Protection | ✅ Complete |
 | Sprint 7 | Native & Core Implementation | ✅ Complete |
+| Sprint 8 | Video Foundation & Fixes | ✅ Complete |
 | Sprint 10 | Verification | 🔜 Planned |
+
+### Sprint 8 Deliverables
+
+- Video frame-by-frame processing with FFmpeg
+- Video thumbnail generation (video_thumbnail)
+- Application icon update (flutter_launcher_icons)
+- UI state persistence (SharedPreferences + SettingsDataSource)
 
 ### Sprint 7 Deliverables
 
