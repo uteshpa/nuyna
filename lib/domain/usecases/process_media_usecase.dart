@@ -13,6 +13,7 @@ import 'package:nuyna/data/datasources/image_processing_datasource.dart';
 import 'package:nuyna/domain/usecases/scrub_fingerprints_usecase.dart';
 import 'package:nuyna/domain/usecases/obfuscate_face_usecase.dart';
 import 'package:nuyna/core/di/service_locator.dart';
+import 'package:nuyna/core/constants/app_constants.dart';
 
 /// Use case for processing media (images and videos) with privacy features.
 ///
@@ -23,6 +24,10 @@ class ProcessMediaUseCase {
   final VideoRepository _videoRepository;
   final FaceDetectionRepository _faceDetectionRepository;
   final ImageProcessingDataSource _imageProcessingDataSource;
+  
+  // T9-03: Cached UseCase instances to reduce DI lookup overhead
+  ScrubFingerprintsUseCase? _cachedScrubUseCase;
+  ObfuscateFaceUseCase? _cachedObfuscateUseCase;
 
   /// Creates a new [ProcessMediaUseCase] instance.
   ProcessMediaUseCase(
@@ -30,6 +35,18 @@ class ProcessMediaUseCase {
     this._faceDetectionRepository,
     this._imageProcessingDataSource,
   );
+  
+  /// Get or create ScrubFingerprintsUseCase (cached for performance)
+  ScrubFingerprintsUseCase get _scrubUseCase {
+    _cachedScrubUseCase ??= getIt<ScrubFingerprintsUseCase>();
+    return _cachedScrubUseCase!;
+  }
+  
+  /// Get or create ObfuscateFaceUseCase (cached for performance)
+  ObfuscateFaceUseCase get _obfuscateUseCase {
+    _cachedObfuscateUseCase ??= getIt<ObfuscateFaceUseCase>();
+    return _cachedObfuscateUseCase!;
+  }
 
   /// Checks if a file is an image based on extension.
   bool _isImageFile(String path) {
@@ -270,82 +287,107 @@ class ProcessMediaUseCase {
         totalFrames = framePaths.length;
         print('[nuyna] Extracted $totalFrames frames');
 
-        // Step 2: Process each frame
-        for (int i = 0; i < framePaths.length; i++) {
-          final framePath = framePaths[i];
-          final frameFile = File(framePath);
-          var frameBytes = Uint8List.fromList(await frameFile.readAsBytes());
+        // Step 2: Process frames in parallel batches for performance
+        print('[nuyna] Processing $totalFrames frames with ${AppConstants.maxConcurrentFrames} parallel workers...');
+        final batchSize = AppConstants.maxConcurrentFrames;
+        
+        for (int batchStart = 0; batchStart < framePaths.length; batchStart += batchSize) {
+          final batchEnd = (batchStart + batchSize).clamp(0, framePaths.length);
+          final batchPaths = framePaths.sublist(batchStart, batchEnd);
           
-          // Decode to get dimensions
-          final decodedFrame = img.decodeImage(frameBytes);
-          if (decodedFrame == null) continue;
-          
-          final width = decodedFrame.width;
-          final height = decodedFrame.height;
-
-          // Apply fingerprint scrubbing
-          if (options.enableFingerGuard) {
+          // Process batch in parallel
+          final futures = batchPaths.asMap().entries.map((entry) async {
+            final batchIndex = entry.key;
+            final framePath = entry.value;
+            final globalIndex = batchStart + batchIndex;
+            
             try {
-              final scrubUseCase = getIt<ScrubFingerprintsUseCase>();
-              frameBytes = await scrubUseCase.execute(
-                imageBytes: frameBytes,
-                width: width,
-                height: height,
-              );
-            } catch (e) {
-              // Continue if scrubbing fails
-            }
-          }
+              final frameFile = File(framePath);
+              var frameBytes = Uint8List.fromList(await frameFile.readAsBytes());
+              
+              // Decode to get dimensions
+              final decodedFrame = img.decodeImage(frameBytes);
+              if (decodedFrame == null) return null;
+              
+              final width = decodedFrame.width;
+              final height = decodedFrame.height;
 
-          // Apply advanced face obfuscation
-          if (options.enableAdvancedFaceObfuscation) {
-            try {
-              final obfuscateUseCase = getIt<ObfuscateFaceUseCase>();
-              frameBytes = await obfuscateUseCase.executeWithDetection(
-                imageBytes: frameBytes,
-                width: width,
-                height: height,
-              );
-            } catch (e) {
-              // Continue if obfuscation fails
-            }
-          }
-
-          // Apply standard face blur
-          if (options.enableFaceBlur && !options.enableAdvancedFaceObfuscation) {
-            try {
-              final detectionResult = await _faceDetectionRepository.detectFaces(frameBytes.toList());
-              if (detectionResult.faces.isNotEmpty) {
-                frameBytes = await _applySimpleBlur(
-                  frameBytes,
-                  width,
-                  height,
-                  detectionResult.faces,
-                  options.blurStrength.toInt(),
-                );
+              // Apply fingerprint scrubbing
+              if (options.enableFingerGuard) {
+                try {
+                  final scrubUseCase = getIt<ScrubFingerprintsUseCase>();
+                  frameBytes = await scrubUseCase.execute(
+                    imageBytes: frameBytes,
+                    width: width,
+                    height: height,
+                  );
+                } catch (e) {
+                  // Continue if scrubbing fails
+                }
               }
+
+              // Apply advanced face obfuscation
+              if (options.enableAdvancedFaceObfuscation) {
+                try {
+                  final obfuscateUseCase = getIt<ObfuscateFaceUseCase>();
+                  frameBytes = await obfuscateUseCase.executeWithDetection(
+                    imageBytes: frameBytes,
+                    width: width,
+                    height: height,
+                  );
+                } catch (e) {
+                  // Continue if obfuscation fails
+                }
+              }
+
+              // Apply standard face blur
+              if (options.enableFaceBlur && !options.enableAdvancedFaceObfuscation) {
+                try {
+                  final detectionResult = await _faceDetectionRepository.detectFaces(frameBytes.toList());
+                  if (detectionResult.faces.isNotEmpty) {
+                    frameBytes = await _applySimpleBlur(
+                      frameBytes,
+                      width,
+                      height,
+                      detectionResult.faces,
+                      options.blurStrength.toInt(),
+                    );
+                  }
+                } catch (e) {
+                  // Continue if blur fails
+                }
+              }
+
+              // Save processed frame as JPEG for better performance (T9-02)
+              final processedFramePath = '$processedFramesDir/frame_${globalIndex.toString().padLeft(4, '0')}.jpg';
+              final processedImage = img.decodeImage(frameBytes);
+              if (processedImage != null) {
+                await File(processedFramePath).writeAsBytes(img.encodeJpg(processedImage, quality: 95));
+              } else {
+                await File(processedFramePath).writeAsBytes(frameBytes);
+              }
+              
+              return globalIndex;
             } catch (e) {
-              // Continue if blur fails
+              return null;
             }
-          }
+          }).toList();
 
-          // Save processed frame
-          final processedFramePath = '$processedFramesDir/frame_${i.toString().padLeft(4, '0')}.png';
-          await File(processedFramePath).writeAsBytes(frameBytes);
-          processedFrames++;
+          // Wait for all frames in batch to complete
+          final results = await Future.wait(futures);
+          processedFrames += results.where((r) => r != null).length;
 
-          // Log progress every 10 frames
-          if (i % 10 == 0) {
-            print('[nuyna] Processed frame $i of $totalFrames');
-          }
+          // Log progress every batch
+          print('[nuyna] Processed ${batchEnd} of $totalFrames frames (${((batchEnd / totalFrames) * 100).toStringAsFixed(0)}%)');
         }
 
         // Step 3: Reassemble frames into video
         print('[nuyna] Reassembling $processedFrames frames into video...');
         
-        // Get audio from original video and combine with processed frames
-        final assembleCommand = '-framerate 10 -i "$processedFramesDir/frame_%04d.png" '
-            '-i "$videoPath" -c:v libx264 -pix_fmt yuv420p '
+        // Get audio from original video and combine with processed JPEG frames
+        // Using JPEG input for faster processing (T9-02)
+        final assembleCommand = '-framerate 10 -i "$processedFramesDir/frame_%04d.jpg" '
+            '-i "$videoPath" -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p '
             '-map 0:v -map 1:a? -shortest '
             '-map_metadata -1 -movflags +faststart "$outputPath"';
         
