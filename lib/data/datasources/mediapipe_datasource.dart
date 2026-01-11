@@ -1,5 +1,5 @@
-import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'package:nuyna/domain/entities/face_region.dart';
@@ -110,11 +110,11 @@ class MediaPipeDataSource {
       return _parseHandLandmarkResults(result);
     } on PlatformException catch (e) {
       // Platform channel not implemented or error occurred
-      print('MediaPipe Platform Channel error: ${e.message}');
+      debugPrint('MediaPipe Platform Channel error: ${e.message}');
       return [];
     } on MissingPluginException {
       // Native implementation not available
-      print('MediaPipe native implementation not available');
+      debugPrint('MediaPipe native implementation not available');
       return [];
     }
   }

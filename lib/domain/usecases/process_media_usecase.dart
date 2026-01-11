@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
 import 'package:ffmpeg_kit_flutter_minimal/ffmpeg_kit.dart';
@@ -8,7 +8,6 @@ import '../entities/processed_video.dart';
 import '../entities/video_processing_options.dart';
 import '../entities/face_region.dart';
 import '../repositories/face_detection_repository.dart';
-import '../repositories/video_repository.dart';
 import 'package:nuyna/data/datasources/image_processing_datasource.dart';
 import 'package:nuyna/domain/usecases/scrub_fingerprints_usecase.dart';
 import 'package:nuyna/domain/usecases/obfuscate_face_usecase.dart';
@@ -21,32 +20,14 @@ import 'package:nuyna/core/constants/app_constants.dart';
 /// - For images: Face/Hand Detection -> Obfuscation/Scrubbing -> Metadata Stripping
 /// - For videos: Frame extraction, face detection, blur application
 class ProcessMediaUseCase {
-  final VideoRepository _videoRepository;
   final FaceDetectionRepository _faceDetectionRepository;
   final ImageProcessingDataSource _imageProcessingDataSource;
-  
-  // T9-03: Cached UseCase instances to reduce DI lookup overhead
-  ScrubFingerprintsUseCase? _cachedScrubUseCase;
-  ObfuscateFaceUseCase? _cachedObfuscateUseCase;
 
   /// Creates a new [ProcessMediaUseCase] instance.
   ProcessMediaUseCase(
-    this._videoRepository,
     this._faceDetectionRepository,
     this._imageProcessingDataSource,
   );
-  
-  /// Get or create ScrubFingerprintsUseCase (cached for performance)
-  ScrubFingerprintsUseCase get _scrubUseCase {
-    _cachedScrubUseCase ??= getIt<ScrubFingerprintsUseCase>();
-    return _cachedScrubUseCase!;
-  }
-  
-  /// Get or create ObfuscateFaceUseCase (cached for performance)
-  ObfuscateFaceUseCase get _obfuscateUseCase {
-    _cachedObfuscateUseCase ??= getIt<ObfuscateFaceUseCase>();
-    return _cachedObfuscateUseCase!;
-  }
 
   /// Checks if a file is an image based on extension.
   bool _isImageFile(String path) {
@@ -267,7 +248,7 @@ class ProcessMediaUseCase {
 
       if (needsFrameProcessing) {
         // Step 1: Extract frames from video
-        print('[nuyna] Starting video frame extraction...');
+        debugPrint('[nuyna] Starting video frame extraction...');
         final extractCommand = '-i "$videoPath" -vf fps=10 "$framesDir/frame_%04d.png"';
         final extractSession = await FFmpegKit.execute(extractCommand);
         final extractReturnCode = await extractSession.getReturnCode();
@@ -285,10 +266,10 @@ class ProcessMediaUseCase {
           ..sort();
         
         totalFrames = framePaths.length;
-        print('[nuyna] Extracted $totalFrames frames');
+        debugPrint('[nuyna] Extracted $totalFrames frames');
 
         // Step 2: Process frames in parallel batches for performance
-        print('[nuyna] Processing $totalFrames frames with ${AppConstants.maxConcurrentFrames} parallel workers...');
+        debugPrint('[nuyna] Processing $totalFrames frames with ${AppConstants.maxConcurrentFrames} parallel workers...');
         final batchSize = AppConstants.maxConcurrentFrames;
         
         for (int batchStart = 0; batchStart < framePaths.length; batchStart += batchSize) {
@@ -378,11 +359,11 @@ class ProcessMediaUseCase {
           processedFrames += results.where((r) => r != null).length;
 
           // Log progress every batch
-          print('[nuyna] Processed ${batchEnd} of $totalFrames frames (${((batchEnd / totalFrames) * 100).toStringAsFixed(0)}%)');
+          debugPrint('[nuyna] Processed $batchEnd of $totalFrames frames (${((batchEnd / totalFrames) * 100).toStringAsFixed(0)}%)');
         }
 
         // Step 3: Reassemble frames into video
-        print('[nuyna] Reassembling $processedFrames frames into video...');
+        debugPrint('[nuyna] Reassembling $processedFrames frames into video...');
         
         // Get audio from original video and combine with processed JPEG frames
         // Using JPEG input for faster processing (T9-02)
@@ -396,11 +377,11 @@ class ProcessMediaUseCase {
         
         if (!ReturnCode.isSuccess(assembleReturnCode)) {
           // Fallback: just strip metadata without frame processing
-          print('[nuyna] Frame reassembly failed, falling back to metadata strip only');
+          debugPrint('[nuyna] Frame reassembly failed, falling back to metadata strip only');
           await _stripMetadataOnly(videoPath, outputPath);
         }
 
-        print('[nuyna] Video processing complete');
+        debugPrint('[nuyna] Video processing complete');
       } else {
         // No frame processing needed, just strip metadata
         await _stripMetadataOnly(videoPath, outputPath);
@@ -415,7 +396,7 @@ class ProcessMediaUseCase {
       }
 
     } catch (e) {
-      print('[nuyna] Video processing error: $e');
+      debugPrint('[nuyna] Video processing error: $e');
       // Fallback to simple file copy
       final inputFile = File(videoPath);
       await inputFile.copy(outputPath);

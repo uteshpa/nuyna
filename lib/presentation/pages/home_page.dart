@@ -380,7 +380,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -399,7 +399,13 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
             value: state.options.enableFingerGuard,
             onChanged: (_) => viewModel.toggleFingerGuard(),
-            activeColor: const Color(0xFF4CAF50),
+            activeTrackColor: const Color(0xFF4CAF50).withValues(alpha: 0.5),
+            thumbColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return const Color(0xFF4CAF50);
+              }
+              return null;
+            }),
             secondary: Icon(
               Icons.fingerprint,
               color: state.options.enableFingerGuard 
@@ -419,7 +425,13 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
             value: state.options.enableAdvancedFaceObfuscation,
             onChanged: (_) => viewModel.toggleAdvancedFaceObfuscation(),
-            activeColor: const Color(0xFF4CAF50),
+            activeTrackColor: const Color(0xFF4CAF50).withValues(alpha: 0.5),
+            thumbColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return const Color(0xFF4CAF50);
+              }
+              return null;
+            }),
             secondary: Icon(
               Icons.security,
               color: state.options.enableAdvancedFaceObfuscation 
