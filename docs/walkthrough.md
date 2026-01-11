@@ -15,7 +15,7 @@
 
 The project follows **Clean Architecture** principles with **MVVM** pattern:
 
-```
+```text
 lib/
 ├── core/                  # Shared utilities and constants
 │   ├── constants/
@@ -337,7 +337,7 @@ class ProcessVideoUseCase {
 
 ### Test Files
 
-```
+```text
 test/
 ├── core/
 │   ├── constants/
