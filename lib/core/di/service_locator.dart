@@ -67,7 +67,6 @@ void setupLocator() {
   );
   getIt.registerLazySingleton<ProcessMediaUseCase>(
     () => ProcessMediaUseCase(
-      getIt<VideoRepository>(),
       getIt<FaceDetectionRepository>(),
       getIt<ImageProcessingDataSource>(),
     ),
