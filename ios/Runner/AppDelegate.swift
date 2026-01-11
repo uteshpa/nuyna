@@ -12,7 +12,46 @@ import UIKit
     // Setup MediaPipe Platform Channel
     setupMediaPipeChannel()
     
+    // Setup VideoSaver Platform Channel for metadata-free video saving
+    setupVideoSaverChannel()
+    
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+  
+  private func setupVideoSaverChannel() {
+    guard let controller = window?.rootViewController as? FlutterViewController else {
+      return
+    }
+    
+    let videoSaverChannel = FlutterMethodChannel(
+      name: "com.uteshpa.nuyna/video_saver",
+      binaryMessenger: controller.binaryMessenger
+    )
+    
+    videoSaverChannel.setMethodCallHandler { [weak self] (call, result) in
+      switch call.method {
+      case "saveVideoWithoutMetadata":
+        self?.handleSaveVideoWithoutMetadata(call: call, result: result)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+  }
+  
+  private func handleSaveVideoWithoutMetadata(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let args = call.arguments as? [String: Any],
+          let filePath = args["filePath"] as? String else {
+      result(FlutterError(code: "INVALID_ARGUMENT", message: "filePath is required", details: nil))
+      return
+    }
+    
+    VideoSaver.saveVideoWithoutMetadata(filePath: filePath) { success, error in
+      if success {
+        result(true)
+      } else {
+        result(FlutterError(code: "SAVE_FAILED", message: error?.localizedDescription ?? "Unknown error", details: nil))
+      }
+    }
   }
   
   private func setupMediaPipeChannel() {

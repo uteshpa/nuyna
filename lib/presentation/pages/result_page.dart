@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 import 'package:gallery_saver_plus/gallery_saver.dart';
 import 'package:nuyna/domain/entities/processed_video.dart';
+import 'package:nuyna/data/datasources/video_saver_datasource.dart';
 
 /// Result page to display processed media (image or video) with export options
 class ResultPage extends ConsumerStatefulWidget {
@@ -80,7 +81,15 @@ class _ResultPageState extends ConsumerState<ResultPage> {
       if (_isImage) {
         result = await GallerySaver.saveImage(widget.processedVideo.outputPath);
       } else {
-        result = await GallerySaver.saveVideo(widget.processedVideo.outputPath);
+        // Use custom VideoSaver for iOS to prevent metadata reattachment
+        if (Platform.isIOS) {
+          final videoSaverDataSource = VideoSaverDataSource();
+          result = await videoSaverDataSource.saveVideoWithoutMetadata(
+            widget.processedVideo.outputPath,
+          );
+        } else {
+          result = await GallerySaver.saveVideo(widget.processedVideo.outputPath);
+        }
       }
       
       if (mounted) {
